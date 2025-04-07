@@ -29,6 +29,11 @@ import BuyersHelp from "./pages/help/BuyersHelp";
 import SellersHelp from "./pages/help/SellersHelp";
 import PrivacySecurityHelp from "./pages/help/PrivacySecurityHelp";
 import TroubleshootingHelp from "./pages/help/TroubleshootingHelp";
+// Help content pages
+import BrowsingContentHelp from "./pages/help/browsing-content";
+import UploadingContentHelp from "./pages/help/uploading-content";
+import TwoFactorHelp from "./pages/help/two-factor";
+import LoginProblemsHelp from "./pages/help/login-problems";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +67,11 @@ const App = () => (
           <Route path="/help/sellers" element={<SellersHelp />} />
           <Route path="/help/privacy-security" element={<PrivacySecurityHelp />} />
           <Route path="/help/troubleshooting" element={<TroubleshootingHelp />} />
+          {/* Help content routes */}
+          <Route path="/help/browsing-content" element={<BrowsingContentHelp />} />
+          <Route path="/help/uploading-content" element={<UploadingContentHelp />} />
+          <Route path="/help/two-factor" element={<TwoFactorHelp />} />
+          <Route path="/help/login-problems" element={<LoginProblemsHelp />} />
           <Route path="/report" element={<ReportAbuse />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

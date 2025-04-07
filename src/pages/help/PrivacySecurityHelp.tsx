@@ -15,15 +15,15 @@ const PrivacySecurityHelp = () => {
           <Breadcrumb className="mb-6">
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink as={Link} to="/">Home</BreadcrumbLink>
+                <Link to="/" className="text-blue-600 hover:underline">Home</Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink as={Link} to="/help">Help Center</BreadcrumbLink>
+                <Link to="/help" className="text-blue-600 hover:underline">Help Center</Link>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink>Privacy & Security</BreadcrumbLink>
+                <span>Privacy & Security</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
