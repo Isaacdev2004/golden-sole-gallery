@@ -11,6 +11,8 @@ import Register from "./pages/Register";
 import Browse from "./pages/Browse";
 import ContentDetail from "./pages/ContentDetail";
 import HowItWorks from "./pages/HowItWorks";
+import Sellers from "./pages/Sellers";
+import SellerProfile from "./pages/SellerProfile";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/browse" element={<Browse />} />
           <Route path="/content/:id" element={<ContentDetail />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/sellers" element={<Sellers />} />
+          <Route path="/seller/:id" element={<SellerProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
