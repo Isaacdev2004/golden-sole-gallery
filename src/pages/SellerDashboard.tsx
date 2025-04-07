@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -789,4 +790,684 @@ const SellerDashboard = () => {
                         <CardContent className="pt-6">
                           <p className="text-sm text-gray-500">Pending Balance</p>
                           <p className="text-2xl font-bold">${sellerData.pendingBalance.toFixed(2)}</p>
-                          <p className="text-xs text-gray-
+                          <p className="text-xs text-gray-500">Available in 7 days</p>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="pt-6">
+                          <p className="text-sm text-gray-500">This Month</p>
+                          <p className="text-2xl font-bold">${sellerData.earnings.thisMonth.toFixed(2)}</p>
+                          <div className="flex items-center text-green-500 text-xs mt-1">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            <span>18% from last month</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <h3 className="font-medium mb-4">Monthly Revenue</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={revenueData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="revenue" stroke="#FFD700" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Transaction History</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border-b">
+                            <div>
+                              <p className="font-medium">Content Purchase</p>
+                              <p className="text-xs text-gray-500">Today, 10:30 AM</p>
+                            </div>
+                            <div className="flex items-center text-green-500">
+                              <p className="font-medium">+$15.00</p>
+                              <ArrowUpRight className="h-4 w-4 ml-1" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border-b">
+                            <div>
+                              <p className="font-medium">Subscription Payment</p>
+                              <p className="text-xs text-gray-500">Yesterday, 8:15 PM</p>
+                            </div>
+                            <div className="flex items-center text-green-500">
+                              <p className="font-medium">+$19.99</p>
+                              <ArrowUpRight className="h-4 w-4 ml-1" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border-b">
+                            <div>
+                              <p className="font-medium">Withdrawal</p>
+                              <p className="text-xs text-gray-500">Apr 1, 2025</p>
+                            </div>
+                            <div className="flex items-center text-red-500">
+                              <p className="font-medium">-$150.00</p>
+                              <ArrowDownRight className="h-4 w-4 ml-1" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3">
+                            <div>
+                              <p className="font-medium">Content Package</p>
+                              <p className="text-xs text-gray-500">Mar 28, 2025</p>
+                            </div>
+                            <div className="flex items-center text-green-500">
+                              <p className="font-medium">+$45.00</p>
+                              <ArrowUpRight className="h-4 w-4 ml-1" />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Performance Analytics</CardTitle>
+                    <CardDescription>Track and analyze your content performance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Total Views</p>
+                              <p className="text-2xl font-bold">{sellerData.stats.views.toLocaleString()}</p>
+                            </div>
+                            <div className="bg-gold/10 p-3 rounded-full">
+                              <Eye className="h-6 w-6 text-gold" />
+                            </div>
+                          </div>
+                          <div className="flex items-center text-green-500 text-xs mt-2">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            <span>12% this week</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Conversion Rate</p>
+                              <p className="text-2xl font-bold">8.7%</p>
+                            </div>
+                            <div className="bg-gold/10 p-3 rounded-full">
+                              <ArrowUpRight className="h-6 w-6 text-gold" />
+                            </div>
+                          </div>
+                          <div className="flex items-center text-green-500 text-xs mt-2">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            <span>2.4% this month</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Avg. Order Value</p>
+                              <p className="text-2xl font-bold">$14.25</p>
+                            </div>
+                            <div className="bg-gold/10 p-3 rounded-full">
+                              <DollarSign className="h-6 w-6 text-gold" />
+                            </div>
+                          </div>
+                          <div className="flex items-center text-red-500 text-xs mt-2">
+                            <ArrowDownRight className="h-3 w-3 mr-1" />
+                            <span>0.8% this week</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <h3 className="font-medium mb-4">Revenue Trend</h3>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={revenueData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip />
+                              <Line type="monotone" dataKey="revenue" stroke="#FFD700" strokeWidth={2} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium mb-4">Content Performance</h3>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={contentPerformanceData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="views" fill="#FFC72C" />
+                              <Bar dataKey="sales" fill="#d4af37" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-1">
+                        <h3 className="font-medium mb-4">Content Distribution</h3>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={contentTypeData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                                label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              >
+                                {contentTypeData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <h3 className="font-medium mb-4">Top Performing Content</h3>
+                        <Card>
+                          <CardContent className="p-0">
+                            <div className="space-y-0">
+                              <div className="flex items-center justify-between p-4 border-b">
+                                <div className="flex items-center">
+                                  <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
+                                    <Image className="h-5 w-5 text-gold" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Summer Vibes Collection</p>
+                                    <p className="text-xs text-gray-500">Photo package</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">$89.00</p>
+                                  <p className="text-xs text-gray-500">28 sales</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center justify-between p-4 border-b">
+                                <div className="flex items-center">
+                                  <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
+                                    <Video className="h-5 w-5 text-gold" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Beach Walk Tutorial</p>
+                                    <p className="text-xs text-gray-500">Video content</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">$45.00</p>
+                                  <p className="text-xs text-gray-500">16 sales</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center justify-between p-4">
+                                <div className="flex items-center">
+                                  <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
+                                    <Image className="h-5 w-5 text-gold" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Exclusive Sunset</p>
+                                    <p className="text-xs text-gray-500">Premium photo</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">$24.99</p>
+                                  <p className="text-xs text-gray-500">14 sales</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Profile Settings</CardTitle>
+                    <CardDescription>Manage your account and preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Personal Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <FormLabel>First Name</FormLabel>
+                            <Input defaultValue="Olivia" className="mt-1" />
+                          </div>
+                          <div>
+                            <FormLabel>Last Name</FormLabel>
+                            <Input defaultValue="Grace" className="mt-1" />
+                          </div>
+                          <div>
+                            <FormLabel>Email Address</FormLabel>
+                            <Input defaultValue="olivia@example.com" className="mt-1" />
+                          </div>
+                          <div>
+                            <FormLabel>Phone Number</FormLabel>
+                            <Input defaultValue="+1 555-123-4567" className="mt-1" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Profile Information</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <FormLabel>Username</FormLabel>
+                            <Input defaultValue="GoldenSteps" className="mt-1" />
+                          </div>
+                          <div>
+                            <FormLabel>Bio</FormLabel>
+                            <Textarea 
+                              defaultValue="Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025."
+                              className="mt-1"
+                              rows={4}
+                            />
+                          </div>
+                          <div>
+                            <FormLabel>Website</FormLabel>
+                            <Input defaultValue="https://oliviagrace.com" className="mt-1" />
+                          </div>
+                          <div>
+                            <FormLabel>Social Media</FormLabel>
+                            <div className="flex items-center mt-1">
+                              <Instagram className="h-5 w-5 text-gray-400 mr-2" />
+                              <Input defaultValue="@olivia.grace" className="flex-1" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Payment Settings</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <FormLabel>Default Payment Method</FormLabel>
+                            <RadioGroup defaultValue="bank" className="mt-2">
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="bank" id="bank" />
+                                <FormLabel htmlFor="bank" className="cursor-pointer">Bank Transfer</FormLabel>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="paypal" id="paypal" />
+                                <FormLabel htmlFor="paypal" className="cursor-pointer">PayPal</FormLabel>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="card" id="card" />
+                                <FormLabel htmlFor="card" className="cursor-pointer">Credit/Debit Card</FormLabel>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                          
+                          <div>
+                            <FormLabel>Default Currency</FormLabel>
+                            <RadioGroup defaultValue="usd" className="mt-2">
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="usd" id="usd" />
+                                <FormLabel htmlFor="usd" className="cursor-pointer">USD - US Dollar</FormLabel>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="eur" id="eur" />
+                                <FormLabel htmlFor="eur" className="cursor-pointer">EUR - Euro</FormLabel>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="gbp" id="gbp" />
+                                <FormLabel htmlFor="gbp" className="cursor-pointer">GBP - British Pound</FormLabel>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Notification Preferences</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Email Notifications</FormLabel>
+                            <Switch id="email-notifications" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>SMS Notifications</FormLabel>
+                            <Switch id="sms-notifications" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Marketing Updates</FormLabel>
+                            <Switch id="marketing-updates" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 flex justify-end space-x-4">
+                        <Button variant="outline">Cancel</Button>
+                        <Button className="bg-gold hover:bg-gold-dark">Save Changes</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+      
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{uploadStep === "select" ? "Upload Content" : "Content Details"}</DialogTitle>
+          </DialogHeader>
+          
+          {uploadStep === "select" ? (
+            <div className="space-y-4">
+              <div 
+                className="border-2 border-dashed rounded-lg p-12 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={triggerFileInput}
+              >
+                <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
+                <p className="text-xs text-gray-400 mt-1">JPG, PNG, or MP4 (max 20MB)</p>
+              </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*,video/*" 
+                onChange={handleFileSelect}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setUploadDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={triggerFileInput}
+                >
+                  Select File
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filePreview && (
+                <div className="aspect-square w-full max-h-64 overflow-hidden rounded-md bg-gray-100">
+                  {fileType === "image" ? (
+                    <img 
+                      src={filePreview} 
+                      alt="Preview" 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <video 
+                      src={filePreview} 
+                      className="w-full h-full object-contain" 
+                      controls
+                    />
+                  )}
+                </div>
+              )}
+              <div className="space-y-2">
+                <FormLabel>Title</FormLabel>
+                <Input 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter a title for your content"
+                />
+              </div>
+              <div className="space-y-2">
+                <FormLabel>Caption (Optional)</FormLabel>
+                <Textarea 
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Add a description for your content"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <FormLabel>Price ($)</FormLabel>
+                <Input 
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Enter price (e.g. 4.99)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              <DialogFooter className="grid grid-cols-2 gap-2 sm:justify-start">
+                <Button 
+                  variant="outline"
+                  onClick={() => setUploadStep("select")}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={handleSubmitUpload}
+                >
+                  Upload Content
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={withdrawDialogOpen} onOpenChange={closeWithdrawDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {withdrawStage === "method" && "Withdraw Funds"}
+              {withdrawStage === "amount" && "Enter Amount"}
+              {withdrawStage === "confirm" && "Confirm Withdrawal"}
+              {withdrawStage === "success" && "Withdrawal Successful"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {withdrawStage === "method" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">Select your preferred payment method:</p>
+              <div className="space-y-2">
+                {paymentMethods.map((method) => (
+                  <div 
+                    key={method.id} 
+                    className={`
+                      flex items-center justify-between p-3 rounded-lg cursor-pointer border
+                      ${selectedPaymentMethod === method.id ? 'border-gold bg-gold/5' : 'border-gray-200 hover:bg-gray-50'}
+                    `}
+                    onClick={() => handlePaymentMethodSelect(method.id)}
+                  >
+                    <div className="flex items-center">
+                      <div className="bg-gold/10 p-2 rounded mr-3">
+                        {method.icon}
+                      </div>
+                      <div>
+                        <p className="font-medium">{method.name}</p>
+                        <p className="text-xs text-gray-500">{method.description} • {method.fee}</p>
+                      </div>
+                    </div>
+                    {method.isDefault && (
+                      <Badge className="bg-gold">Default</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <DialogFooter className="sm:justify-start">
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+              </DialogFooter>
+            </div>
+          )}
+          
+          {withdrawStage === "amount" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Available balance: <span className="font-medium text-black">${sellerData.balance.toFixed(2)}</span></p>
+              </div>
+              <div className="space-y-2">
+                <FormLabel>Amount to withdraw ($)</FormLabel>
+                <Input 
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  type="number" 
+                  step="0.01"
+                  min="0.01"
+                  max={sellerData.balance}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="space-y-2">
+                <FormLabel>Note (Optional)</FormLabel>
+                <Textarea 
+                  value={withdrawNote}
+                  onChange={(e) => setWithdrawNote(e.target.value)}
+                  placeholder="Add a note to this transaction"
+                  rows={2}
+                />
+              </div>
+              <DialogFooter className="grid grid-cols-2 gap-2 sm:justify-start">
+                <Button 
+                  variant="outline"
+                  onClick={() => setWithdrawStage("method")}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={handleWithdrawAmountSubmit}
+                  disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
+                >
+                  Continue
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+          
+          {withdrawStage === "confirm" && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-500">Amount:</span>
+                  <span className="font-medium">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-500">Fee:</span>
+                  <span className="font-medium">${getWithdrawalFee().toFixed(2)}</span>
+                </div>
+                <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between">
+                  <span className="text-gray-700 font-medium">Total:</span>
+                  <span className="font-bold text-gold">${getWithdrawalTotal().toFixed(2)}</span>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">The funds will be sent to:</p>
+                <div className="flex items-center mt-2">
+                  <div className="bg-gold/10 p-2 rounded mr-3">
+                    {paymentMethods.find(m => m.id === selectedPaymentMethod)?.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium">{paymentMethods.find(m => m.id === selectedPaymentMethod)?.name}</p>
+                    <p className="text-xs text-gray-500">{paymentMethods.find(m => m.id === selectedPaymentMethod)?.description}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter className="grid grid-cols-2 gap-2 sm:justify-start">
+                <Button 
+                  variant="outline"
+                  onClick={() => setWithdrawStage("amount")}
+                  disabled={isProcessingWithdrawal}
+                >
+                  Back
+                </Button>
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={handleWithdrawalConfirmation}
+                  disabled={isProcessingWithdrawal}
+                >
+                  {isProcessingWithdrawal ? (
+                    <><span className="animate-spin mr-1">◌</span> Processing...</>
+                  ) : (
+                    'Confirm Withdrawal'
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+          
+          {withdrawStage === "success" && (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                <CheckCircle className="text-green-500 h-6 w-6" />
+              </div>
+              <p className="font-medium">Withdrawal Initiated Successfully!</p>
+              <p className="text-sm text-gray-500">
+                Your withdrawal of ${parseFloat(withdrawAmount).toFixed(2)} has been initiated and is being processed.
+              </p>
+              <p className="text-sm text-gray-500">
+                The funds should arrive in your account within {paymentMethods.find(m => m.id === selectedPaymentMethod)?.description.toLowerCase()}.
+              </p>
+              <DialogFooter className="justify-center mt-4">
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={closeWithdrawDialog}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default SellerDashboard;
+
