@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +24,11 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Extract plan info from location state
+  const selectedPlan = location.state?.plan || null;
+  const hasPaid = location.state?.paid || false;
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -33,6 +38,20 @@ const Register = () => {
     agreeTerms: false,
     agreeAge: false,
   });
+
+  // Set account type to seller if coming from pricing page
+  useEffect(() => {
+    if (selectedPlan) {
+      setAccountType("seller");
+      
+      if (hasPaid) {
+        toast({
+          title: "Plan Purchase Complete",
+          description: `You've purchased the ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan. Complete registration to get started.`,
+        });
+      }
+    }
+  }, [selectedPlan, hasPaid, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -59,7 +78,7 @@ const Register = () => {
     
     // In a real application, you would send this data to your backend
     // For now, we'll simulate a registration process
-    console.log("Register with:", { ...formData, accountType });
+    console.log("Register with:", { ...formData, accountType, selectedPlan, hasPaid });
     
     setTimeout(() => {
       setIsLoading(false);
@@ -91,7 +110,11 @@ const Register = () => {
                   Join <span className="gold-text">Magnificent Soles</span>
                 </CardTitle>
                 <CardDescription className="text-center">
-                  Create an account to start buying or selling content
+                  {selectedPlan ? (
+                    `Create your ${selectedPlan} seller account ${hasPaid ? "(Payment Complete)" : ""}`
+                  ) : (
+                    "Create an account to start buying or selling content"
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -104,15 +127,26 @@ const Register = () => {
                       className="flex gap-4"
                     >
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="buyer" id="buyer" />
+                        <RadioGroupItem value="buyer" id="buyer" disabled={!!selectedPlan} />
                         <Label htmlFor="buyer">Buyer</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="seller" id="seller" />
+                        <RadioGroupItem value="seller" id="seller" disabled={!!selectedPlan} />
                         <Label htmlFor="seller">Seller</Label>
                       </div>
                     </RadioGroup>
                   </div>
+                  
+                  {selectedPlan && (
+                    <div className="bg-gold/10 p-3 rounded-md border border-gold/30">
+                      <p className="text-sm font-medium">
+                        Selected Plan: <span className="font-bold">{selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}</span>
+                      </p>
+                      {hasPaid && (
+                        <p className="text-xs text-green-600 mt-1">Payment complete</p>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>

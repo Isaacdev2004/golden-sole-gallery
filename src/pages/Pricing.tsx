@@ -1,15 +1,23 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
 const PricingPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("credit");
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const tiers = [
     {
@@ -26,12 +34,8 @@ const PricingPage = () => {
       cta: "Get Started",
       highlighted: false,
       action: () => {
-        // For new users, redirect to register page
-        navigate("/register", { state: { plan: "basic" } });
-        toast({
-          title: "Basic Plan Selected",
-          description: "You've selected our Basic plan. Complete registration to get started."
-        });
+        setSelectedPlan("basic");
+        setIsDialogOpen(true);
       }
     },
     {
@@ -49,12 +53,8 @@ const PricingPage = () => {
       cta: "Sign Up",
       highlighted: true,
       action: () => {
-        // For new users, redirect to register page with pro plan selected
-        navigate("/register", { state: { plan: "pro" } });
-        toast({
-          title: "Pro Plan Selected",
-          description: "You've selected our Pro plan. Complete registration to upgrade your experience."
-        });
+        setSelectedPlan("pro");
+        setIsDialogOpen(true);
       }
     },
     {
@@ -88,6 +88,34 @@ const PricingPage = () => {
       }
     }
   ];
+
+  const processPayment = () => {
+    setIsProcessing(true);
+    
+    // In a real app, this would be a call to your payment processor
+    setTimeout(() => {
+      setIsProcessing(false);
+      setIsDialogOpen(false);
+      
+      toast({
+        title: "Payment Successful!",
+        description: `You have successfully purchased the ${selectedPlan?.charAt(0).toUpperCase() + selectedPlan?.slice(1)} plan.`
+      });
+      
+      // Redirect to registration with plan info
+      navigate("/register", { 
+        state: { 
+          plan: selectedPlan,
+          paid: true
+        } 
+      });
+    }, 1500);
+  };
+
+  const getPlanPrice = () => {
+    const plan = tiers.find(tier => tier.name.toLowerCase() === selectedPlan);
+    return plan ? plan.price : "";
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -190,6 +218,96 @@ const PricingPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Payment Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Complete Your Purchase</DialogTitle>
+            <DialogDescription>
+              {selectedPlan && `Purchase the ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan for ${getPlanPrice()} per month`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <RadioGroup 
+                value={paymentMethod} 
+                onValueChange={setPaymentMethod}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2 border p-3 rounded-md">
+                  <RadioGroupItem value="credit" id="credit" />
+                  <Label htmlFor="credit">Credit / Debit Card</Label>
+                </div>
+                <div className="flex items-center space-x-2 border p-3 rounded-md">
+                  <RadioGroupItem value="paypal" id="paypal" />
+                  <Label htmlFor="paypal">PayPal</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {paymentMethod === 'credit' && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cardNumber">Card Number</Label>
+                  <Input 
+                    id="cardNumber" 
+                    placeholder="1234 5678 9012 3456" 
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="expiry">Expiry Date</Label>
+                    <Input 
+                      id="expiry" 
+                      placeholder="MM/YY" 
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cvc">CVC</Label>
+                    <Input 
+                      id="cvc" 
+                      placeholder="123" 
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="name">Name on Card</Label>
+                  <Input 
+                    id="name" 
+                    placeholder="John Doe" 
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {paymentMethod === 'paypal' && (
+              <div className="text-center p-4 border rounded-md bg-gray-50">
+                <p className="text-sm text-gray-600 mb-2">You will be redirected to PayPal to complete your purchase.</p>
+                <img 
+                  src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" 
+                  alt="PayPal" 
+                  className="mx-auto h-6" 
+                />
+              </div>
+            )}
+            
+            <Button 
+              className="w-full bg-gold hover:bg-gold-dark mt-4"
+              onClick={processPayment}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing..." : `Pay ${getPlanPrice()}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>
