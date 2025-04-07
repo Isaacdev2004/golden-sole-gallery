@@ -126,7 +126,7 @@ const HelpCenter = () => {
             </Card>
           </div>
           
-          {/* Categories section */}
+          {/* Categories section - Updated with links to the new pages */}
           <h2 className="text-2xl font-semibold mb-6">Help Categories</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <Card className="hover:shadow-md transition-shadow">
@@ -157,6 +157,9 @@ const HelpCenter = () => {
                     </Link>
                   </li>
                 </ul>
+                <Link to="/help/buyers" className="block mt-4 text-primary hover:underline font-medium">
+                  View all buyer topics →
+                </Link>
               </CardContent>
             </Card>
             
@@ -188,6 +191,9 @@ const HelpCenter = () => {
                     </Link>
                   </li>
                 </ul>
+                <Link to="/help/sellers" className="block mt-4 text-primary hover:underline font-medium">
+                  View all seller topics →
+                </Link>
               </CardContent>
             </Card>
             
@@ -219,6 +225,9 @@ const HelpCenter = () => {
                     </Link>
                   </li>
                 </ul>
+                <Link to="/help/privacy-security" className="block mt-4 text-primary hover:underline font-medium">
+                  View all privacy topics →
+                </Link>
               </CardContent>
             </Card>
             
@@ -250,6 +259,9 @@ const HelpCenter = () => {
                     </Link>
                   </li>
                 </ul>
+                <Link to="/help/troubleshooting" className="block mt-4 text-primary hover:underline font-medium">
+                  View all troubleshooting topics →
+                </Link>
               </CardContent>
             </Card>
           </div>
