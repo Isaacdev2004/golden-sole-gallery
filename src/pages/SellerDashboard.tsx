@@ -27,11 +27,11 @@ const SellerDashboard = () => {
   const [withdrawStage, setWithdrawStage] = useState<"method" | "amount" | "confirm" | "success">("method");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [fileType, setFileType<"image" | "video" | null>(null);
+  const [fileType, setFileType] = useState<"image" | "video" | null>(null);
   const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [price, setPrice] = useState("");
-  const [uploadStep, setUploadStep<"select" | "details">("select");
+  const [uploadStep, setUploadStep] = useState<"select" | "details">("select");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawNote, setWithdrawNote] = useState("");
@@ -51,8 +51,8 @@ const SellerDashboard = () => {
   // State for filters and sorting
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
-  const [filterType, setFilterType<"all" | "photo" | "video">("all");
-  const [sortBy, setSortBy<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
+  const [filterType, setFilterType] = useState<"all" | "photo" | "video">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
   const [filteredContent, setFilteredContent] = useState(contentItems);
 
   // Apply tab from URL parameters
