@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -266,6 +265,13 @@ const SellerDashboard = () => {
     return amount - getWithdrawalFee();
   };
 
+  const handleSettingsClick = () => {
+    const settingsTabElement = document.querySelector('[value="settings"]');
+    if (settingsTabElement) {
+      (settingsTabElement as HTMLElement).click();
+    }
+  };
+
   return (
     <>
       <Navigation />
@@ -464,7 +470,11 @@ const SellerDashboard = () => {
                           <DollarSign className="h-6 w-6 mb-1" />
                           <span>Withdraw Funds</span>
                         </Button>
-                        <Button className="h-auto py-4 flex flex-col" variant="outline">
+                        <Button 
+                          className="h-auto py-4 flex flex-col" 
+                          variant="outline"
+                          onClick={handleSettingsClick}
+                        >
                           <Settings className="h-6 w-6 mb-1" />
                           <span>Settings</span>
                         </Button>
