@@ -280,6 +280,10 @@ const SellerDashboard = () => {
     setActiveTab("settings");
   };
 
+  const handleAnalyticsClick = () => {
+    setActiveTab("analytics");
+  };
+
   return (
     <>
       <Navigation />
@@ -486,7 +490,11 @@ const SellerDashboard = () => {
                           <Settings className="h-6 w-6 mb-1" />
                           <span>Settings</span>
                         </Button>
-                        <Button className="h-auto py-4 flex flex-col" variant="outline">
+                        <Button 
+                          className="h-auto py-4 flex flex-col" 
+                          variant="outline"
+                          onClick={handleAnalyticsClick}
+                        >
                           <BarChart3 className="h-6 w-6 mb-1" />
                           <span>Analytics</span>
                         </Button>

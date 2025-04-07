@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,17 @@ const Navigation = () => {
     } else {
       // If not on seller dashboard, we'll navigate there with a settings parameter
       navigate("/seller-dashboard?tab=settings");
+    }
+  };
+
+  // Function to navigate to seller dashboard analytics
+  const navigateToAnalytics = () => {
+    if (isOnSellerDashboard) {
+      // If already on seller dashboard, we'll update the URL with the analytics parameter
+      navigate("/seller-dashboard?tab=analytics", { replace: true });
+    } else {
+      // If not on seller dashboard, we'll navigate there with an analytics parameter
+      navigate("/seller-dashboard?tab=analytics");
     }
   };
 
