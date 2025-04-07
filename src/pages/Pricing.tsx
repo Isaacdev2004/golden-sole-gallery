@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -70,21 +69,11 @@ const PricingPage = () => {
         "Custom branding",
         "Early access to new features"
       ],
-      cta: "Contact Sales",
+      cta: "Get Premium",
       highlighted: false,
       action: () => {
-        // For Premium, we'll show a toast and could redirect to a contact form
-        toast({
-          title: "Premium Plan Inquiry",
-          description: "Thank you for your interest! Our sales team will contact you shortly."
-        });
-        // Simulate sending user info to sales team
-        setTimeout(() => {
-          toast({
-            title: "Request Received",
-            description: "A sales representative will reach out within 24 hours."
-          });
-        }, 2000);
+        setSelectedPlan("premium");
+        setIsDialogOpen(true);
       }
     }
   ];
