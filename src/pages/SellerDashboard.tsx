@@ -12,7 +12,7 @@ import {
   ChevronUp, Image, Video, DollarSign, Star, 
   Users, Upload, BarChart3, Settings, Plus, User,
   X, Instagram, FileText, Camera, Captions, Wallet,
-  CreditCard, BankNote, CheckCircle, ArrowRight
+  CreditCard, Banknote, CheckCircle, ArrowRight
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -82,7 +82,7 @@ const SellerDashboard = () => {
     { 
       id: "bank_transfer", 
       name: "Bank Transfer", 
-      icon: <BankNote className="h-6 w-6" />,
+      icon: <Banknote className="h-6 w-6" />,
       description: "2-3 business days",
       fee: "No fee",
       isDefault: true
