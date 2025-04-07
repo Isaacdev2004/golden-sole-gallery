@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -10,14 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
   ChevronUp, Image, Video, DollarSign, Star, 
-  Users, Upload, BarChart3, Settings, Plus
+  Users, Upload, BarChart3, Settings, Plus, User
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const SellerDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Mock data for seller dashboard
   const sellerData = {
     name: "Olivia Grace",
     username: "GoldenSteps",
@@ -49,7 +47,6 @@ const SellerDashboard = () => {
     }
   };
 
-  // Mock content data
   const contentItems = [
     { id: 1, type: "photo", title: "Beach Day", likes: 24, sales: 7, price: "$5.99", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
     { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
@@ -63,7 +60,6 @@ const SellerDashboard = () => {
         <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
           <div className="lg:col-span-1">
             <Card className="mb-6">
               <CardContent className="pt-6">
@@ -159,7 +155,6 @@ const SellerDashboard = () => {
             </Card>
           </div>
           
-          {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -169,7 +164,6 @@ const SellerDashboard = () => {
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
               
-              {/* Overview Tab */}
               <TabsContent value="overview">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <Card>
@@ -211,7 +205,7 @@ const SellerDashboard = () => {
                           <User className="h-6 w-6 text-gold" />
                         </div>
                       </div>
-                      <Progress value={85} className="mt-2 bg-gray-200" indicatorClassName="bg-gold" />
+                      <Progress value={85} className="mt-2 bg-gray-200" />
                     </CardContent>
                   </Card>
                 </div>
@@ -264,7 +258,6 @@ const SellerDashboard = () => {
                 </div>
               </TabsContent>
               
-              {/* Content Tab */}
               <TabsContent value="content">
                 <Card className="mb-6">
                   <CardHeader>
@@ -318,7 +311,6 @@ const SellerDashboard = () => {
                 </Card>
               </TabsContent>
               
-              {/* Earnings Tab */}
               <TabsContent value="earnings">
                 <Card className="mb-6">
                   <CardHeader>
@@ -373,7 +365,6 @@ const SellerDashboard = () => {
                 </Card>
               </TabsContent>
               
-              {/* Settings Tab */}
               <TabsContent value="settings">
                 <Card className="mb-6">
                   <CardHeader>
