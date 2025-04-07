@@ -55,48 +55,8 @@ const SellerDashboard = () => {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
   const [filteredContent, setFilteredContent] = useState(contentItems);
 
-  // Apply tab from URL parameters
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const tabParam = searchParams.get("tab");
-    
-    if (tabParam && ["overview", "content", "earnings", "settings", "analytics"].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [location]);
-
-  // Apply filtering and sorting
-  useEffect(() => {
-    let filtered = [...contentItems];
-    
-    // Apply filter
-    if (filterType !== "all") {
-      filtered = filtered.filter(item => item.type === filterType);
-    }
-    
-    // Apply sort
-    switch (sortBy) {
-      case "newest":
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case "oldest":
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case "price-high":
-        filtered.sort((a, b) => parseFloat(b.price.replace("$", "")) - parseFloat(a.price.replace("$", "")));
-        break;
-      case "price-low":
-        filtered.sort((a, b) => parseFloat(a.price.replace("$", "")) - parseFloat(b.price.replace("$", "")));
-        break;
-      case "popular":
-        filtered.sort((a, b) => b.sales - a.sales);
-        break;
-    }
-    
-    setFilteredContent(filtered);
-  }, [filterType, sortBy, contentItems]);
-
-  const sellerData = {
+  // State for seller profile data
+  const [sellerData, setSellerData] = useState({
     name: "Olivia Grace",
     username: "GoldenSteps",
     verified: true,
@@ -124,8 +84,9 @@ const SellerDashboard = () => {
     content: {
       photos: 137,
       videos: 42,
-    }
-  };
+    },
+    bio: "Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025."
+  });
 
   const paymentMethods = [
     { 
@@ -350,6 +311,65 @@ const SellerDashboard = () => {
     setActiveTab("content");
   };
 
+  const handleProfileUpdate = (updatedProfile: {
+    name: string;
+    username: string;
+    profileImage: string;
+    bio: string;
+  }) => {
+    setSellerData(prev => ({
+      ...prev,
+      name: updatedProfile.name,
+      username: updatedProfile.username,
+      profileImage: updatedProfile.profileImage,
+      bio: updatedProfile.bio
+    }));
+    
+    toast({
+      title: "Profile updated",
+      description: "Your profile information has been updated successfully"
+    });
+  };
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+    
+    if (tabParam && ["overview", "content", "earnings", "settings", "analytics"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    let filtered = [...contentItems];
+    
+    // Apply filter
+    if (filterType !== "all") {
+      filtered = filtered.filter(item => item.type === filterType);
+    }
+    
+    // Apply sort
+    switch (sortBy) {
+      case "newest":
+        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        break;
+      case "oldest":
+        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case "price-high":
+        filtered.sort((a, b) => parseFloat(b.price.replace("$", "")) - parseFloat(a.price.replace("$", "")));
+        break;
+      case "price-low":
+        filtered.sort((a, b) => parseFloat(a.price.replace("$", "")) - parseFloat(b.price.replace("$", "")));
+        break;
+      case "popular":
+        filtered.sort((a, b) => b.sales - a.sales);
+        break;
+    }
+    
+    setFilteredContent(filtered);
+  }, [filterType, sortBy, contentItems]);
+
   return (
     <>
       <Navigation />
@@ -367,6 +387,7 @@ const SellerDashboard = () => {
               rating={sellerData.rating}
               reviews={sellerData.reviews}
               content={sellerData.content}
+              onProfileUpdate={handleProfileUpdate}
             />
             
             <QuickStatsCard
