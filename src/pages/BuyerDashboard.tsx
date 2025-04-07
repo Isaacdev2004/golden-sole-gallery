@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -15,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -70,7 +70,6 @@ const BuyerDashboard = () => {
   };
 
   const handleViewSellerProfile = (sellerId) => {
-    // Instead of navigating away, show the creator details in a dialog
     const creator = favorites.find(f => f.id === sellerId);
     if (creator) {
       setSelectedCreator(creator);
@@ -90,7 +89,6 @@ const BuyerDashboard = () => {
     });
   };
 
-  // Close the creator detail dialog
   const closeCreatorDetail = () => {
     setShowCreatorDetail(false);
     setSelectedCreator(null);
@@ -412,85 +410,72 @@ const BuyerDashboard = () => {
         </div>
       </div>
       
-      {/* Creator detail dialog */}
-      <AlertDialog open={showCreatorDetail} onOpenChange={setShowCreatorDetail}>
-        <AlertDialogContent className="max-w-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold">Creator Profile</AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedCreator && (
-                <div className="mt-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20 border-4 border-gold">
-                      <AvatarImage src={selectedCreator.image} />
-                      <AvatarFallback className="bg-gold text-white text-xl">
-                        {selectedCreator.displayName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-xl font-bold">{selectedCreator.displayName}</h3>
-                      <p className="text-gray-500">@{selectedCreator.name}</p>
-                      <div className="flex items-center mt-1">
-                        <span className="text-sm text-amber-500 font-medium">{selectedCreator.rating} ★</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 space-y-4">
-                    <div>
-                      <h4 className="font-medium text-gray-700">Content Available</h4>
-                      <div className="flex gap-4 mt-2">
-                        <div className="bg-gray-100 rounded-lg p-4 text-center flex-1">
-                          <p className="text-2xl font-bold text-gold">{selectedCreator.content.photos}</p>
-                          <p className="text-gray-600">Photos</p>
-                        </div>
-                        <div className="bg-gray-100 rounded-lg p-4 text-center flex-1">
-                          <p className="text-2xl font-bold text-gold">{selectedCreator.content.videos}</p>
-                          <p className="text-gray-600">Videos</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="border-t pt-4 mt-4">
-                      <h4 className="font-medium text-gray-700 mb-2">Featured Content</h4>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[1, 2, 3].map((item) => (
-                          <div key={item} className="aspect-square bg-gray-200 rounded-md overflow-hidden">
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              Preview {item}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between mt-8">
-                    <Button variant="outline" onClick={closeCreatorDetail}>
-                      Back to Dashboard
-                    </Button>
-                    <div className="space-x-2">
-                      <Button 
-                        variant="outline" 
-                        className="border-gold text-gold hover:bg-gold/10"
-                        onClick={() => {
-                          handleToggleFollow(selectedCreator.id);
-                          closeCreatorDetail();
-                        }}
-                      >
-                        Following
-                      </Button>
-                      <Button className="bg-gold hover:bg-gold-dark">
-                        Browse Content
-                      </Button>
-                    </div>
+      <Dialog open={showCreatorDetail} onOpenChange={setShowCreatorDetail}>
+        <DialogContent className="max-w-md sm:max-w-lg overflow-y-auto max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Creator Profile</DialogTitle>
+            <DialogDescription>
+              View creator details and available content
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCreator && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16 border-2 border-gold">
+                  <AvatarImage src={selectedCreator.image} />
+                  <AvatarFallback className="bg-gold text-white text-lg">
+                    {selectedCreator.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedCreator.displayName}</h3>
+                  <p className="text-sm text-gray-500">@{selectedCreator.name}</p>
+                  <div className="flex items-center mt-1">
+                    <span className="text-sm text-amber-500 font-medium">{selectedCreator.rating} ★</span>
                   </div>
                 </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-        </AlertDialogContent>
-      </AlertDialog>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-100 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-gold">{selectedCreator.content.photos}</p>
+                  <p className="text-sm text-gray-600">Photos</p>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-gold">{selectedCreator.content.videos}</p>
+                  <p className="text-sm text-gray-600">Videos</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2 text-sm">Featured Content</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="aspect-square bg-gray-200 rounded-md overflow-hidden">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        Preview {item}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="pt-2 flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  className="border-gold text-gold hover:bg-gold/10"
+                  onClick={() => handleToggleFollow(selectedCreator.id)}
+                >
+                  Following
+                </Button>
+                <Button className="bg-gold hover:bg-gold-dark">
+                  Browse Content
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </>
