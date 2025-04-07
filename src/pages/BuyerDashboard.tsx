@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Clock, User } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,8 @@ const BuyerDashboard = () => {
   const [showAllFavorites, setShowAllFavorites] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
+  const [showActivityStatus, setShowActivityStatus] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -92,6 +95,26 @@ const BuyerDashboard = () => {
   const closeCreatorDetail = () => {
     setShowCreatorDetail(false);
     setSelectedCreator(null);
+  };
+  
+  const handleActivityStatusChange = (checked) => {
+    setShowActivityStatus(checked);
+    toast({
+      title: checked ? "Activity status enabled" : "Activity status disabled",
+      description: checked 
+        ? "Sellers can now see when you're online" 
+        : "Your online status is now hidden from sellers",
+    });
+  };
+  
+  const handleEmailNotificationsChange = (checked) => {
+    setEmailNotifications(checked);
+    toast({
+      title: checked ? "Email notifications enabled" : "Email notifications disabled",
+      description: checked 
+        ? "You will receive updates and offers by email" 
+        : "You will no longer receive updates and offers by email",
+    });
   };
 
   return (
@@ -375,24 +398,26 @@ const BuyerDashboard = () => {
                       
                       <div className="pt-4 border-t">
                         <h4 className="font-medium mb-2">Privacy Settings</h4>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p>Show activity status</p>
+                              <p className="font-medium">Show activity status</p>
                               <p className="text-xs text-gray-500">Let sellers know when you're online</p>
                             </div>
-                            <div>
-                              <div className="h-6 w-12 bg-gray-200 rounded-full"></div>
-                            </div>
+                            <Switch 
+                              checked={showActivityStatus} 
+                              onCheckedChange={handleActivityStatusChange} 
+                            />
                           </div>
                           <div className="flex items-center justify-between">
                             <div>
-                              <p>Email notifications</p>
+                              <p className="font-medium">Email notifications</p>
                               <p className="text-xs text-gray-500">Receive updates and offers by email</p>
                             </div>
-                            <div>
-                              <div className="h-6 w-12 bg-gold rounded-full"></div>
-                            </div>
+                            <Switch 
+                              checked={emailNotifications} 
+                              onCheckedChange={handleEmailNotificationsChange} 
+                            />
                           </div>
                         </div>
                       </div>
