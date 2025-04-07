@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 const SellerDashboard = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -47,6 +49,15 @@ const SellerDashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+    
+    if (tabParam && ["overview", "content", "earnings", "settings"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
+
   const sellerData = {
     name: "Olivia Grace",
     username: "GoldenSteps",
@@ -266,10 +277,7 @@ const SellerDashboard = () => {
   };
 
   const handleSettingsClick = () => {
-    const settingsTabElement = document.querySelector('[value="settings"]');
-    if (settingsTabElement) {
-      (settingsTabElement as HTMLElement).click();
-    }
+    setActiveTab("settings");
   };
 
   return (
@@ -375,7 +383,7 @@ const SellerDashboard = () => {
           </div>
           
           <div className="lg:col-span-3">
-            <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
+            <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4 mb-6">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="content">My Content</TabsTrigger>

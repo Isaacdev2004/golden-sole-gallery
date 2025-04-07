@@ -1,12 +1,12 @@
-
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, User, Menu, X } from "lucide-react";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Check if user is on the seller dashboard page
   const isOnSellerDashboard = location.pathname === "/seller-dashboard";
@@ -14,14 +14,11 @@ const Navigation = () => {
   // Function to navigate to seller dashboard settings
   const navigateToSettings = () => {
     if (isOnSellerDashboard) {
-      // If already on seller dashboard, we'll use the tab system
-      const settingsTabElement = document.querySelector('[value="settings"]');
-      if (settingsTabElement) {
-        (settingsTabElement as HTMLElement).click();
-      }
+      // If already on seller dashboard, we'll update the URL with the settings parameter
+      navigate("/seller-dashboard?tab=settings", { replace: true });
     } else {
       // If not on seller dashboard, we'll navigate there with a settings parameter
-      window.location.href = "/seller-dashboard?tab=settings";
+      navigate("/seller-dashboard?tab=settings");
     }
   };
 
