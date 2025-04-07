@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,14 +9,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Clock, User } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
+  const [showAllPurchases, setShowAllPurchases] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Mock data for buyer dashboard
+  // Mock data for buyer dashboard with more purchases for the view all dialog
   const recentPurchases = [
     { id: 1, name: "Summer Collection", seller: "GoldenSteps", price: "$15.00", date: "April 3, 2025", image: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
     { id: 2, name: "Beach Day Set", seller: "ArtsyToes", price: "$12.50", date: "April 1, 2025", image: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
+    { id: 3, name: "Wellness Feet Pack", seller: "FeetFirst", price: "$18.00", date: "March 28, 2025", image: "https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?w=400&h=400&auto=format&q=80" },
+    { id: 4, name: "Fashion Week Special", seller: "SoleMates", price: "$22.50", date: "March 25, 2025", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=400&h=400&auto=format&q=80" },
+    { id: 5, name: "Autumn Collection", seller: "GoldenSteps", price: "$15.00", date: "March 20, 2025", image: "https://images.unsplash.com/photo-1604001307862-2d953b875079?w=400&h=400&auto=format&q=80" },
   ];
   
   const favorites = [
@@ -28,6 +51,15 @@ const BuyerDashboard = () => {
     email: "john.doe@example.com",
     memberSince: "March 2025",
     credits: 50,
+  };
+
+  const handleViewPurchase = (purchaseId) => {
+    toast({
+      title: "Viewing purchase details",
+      description: `Viewing details for purchase #${purchaseId}`,
+    });
+    // In a real app, this would navigate to a purchase detail page
+    // navigate(`/purchase/${purchaseId}`);
   };
 
   return (
@@ -82,21 +114,76 @@ const BuyerDashboard = () => {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>Recent Purchases</CardTitle>
-                      <Button variant="outline" size="sm">
-                        View All
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            View All
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                          <DialogHeader>
+                            <DialogTitle>All Purchases</DialogTitle>
+                          </DialogHeader>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Image</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Seller</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {recentPurchases.map((purchase) => (
+                                <TableRow key={purchase.id}>
+                                  <TableCell>
+                                    <div className="h-12 w-12 rounded-md overflow-hidden">
+                                      <img
+                                        src={purchase.image}
+                                        alt={purchase.name}
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{purchase.name}</TableCell>
+                                  <TableCell>{purchase.seller}</TableCell>
+                                  <TableCell>{purchase.date}</TableCell>
+                                  <TableCell>{purchase.price}</TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleViewPurchase(purchase.id)}
+                                    >
+                                      View
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {recentPurchases.length > 0 ? (
+                    {recentPurchases.slice(0, 2).length > 0 ? (
                       <div className="space-y-4">
-                        {recentPurchases.map((purchase) => (
-                          <div key={purchase.id} className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                        {recentPurchases.slice(0, 2).map((purchase) => (
+                          <div 
+                            key={purchase.id} 
+                            className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                            onClick={() => handleViewPurchase(purchase.id)}
+                          >
                             <div className="h-16 w-16 rounded-md overflow-hidden">
                               <img 
                                 src={purchase.image} 
                                 alt={purchase.name} 
                                 className="h-full w-full object-cover"
+                                loading="lazy"
                               />
                             </div>
                             <div className="flex-1">
