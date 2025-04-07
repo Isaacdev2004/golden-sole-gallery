@@ -77,7 +77,7 @@ const WithdrawEarningsHelp = () => {
             </p>
             <ol className="list-decimal pl-6 my-4 space-y-2">
               <li>Go to your seller dashboard</li>
-              <li>Navigate to "Earnings" > "Payout Settings"</li>
+              <li>Navigate to "Earnings" {`>`} "Payout Settings"</li>
               <li>Click "Add Payout Method"</li>
               <li>Select your preferred method</li>
               <li>Enter the required details for that method</li>
@@ -96,7 +96,7 @@ const WithdrawEarningsHelp = () => {
             </p>
             <ol className="list-decimal pl-6 my-4 space-y-2">
               <li>Go to your seller dashboard</li>
-              <li>Navigate to "Earnings" > "Withdrawals"</li>
+              <li>Navigate to "Earnings" {`>`} "Withdrawals"</li>
               <li>Click "Request Withdrawal"</li>
               <li>Select your payout method</li>
               <li>Enter the amount you wish to withdraw (minimum $50)</li>

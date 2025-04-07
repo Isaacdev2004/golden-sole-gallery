@@ -127,7 +127,7 @@ const TaxInformationHelp = () => {
             </p>
             <ol className="list-decimal pl-6 my-4 space-y-2">
               <li>If your tax status or information changes, update your tax forms immediately</li>
-              <li>Go to your seller dashboard > Settings > Tax Information</li>
+              <li>Go to your seller dashboard {`>`} Settings {`>`} Tax Information</li>
               <li>Select "Update Tax Information"</li>
               <li>Complete the required forms</li>
               <li>Submit for verification</li>
