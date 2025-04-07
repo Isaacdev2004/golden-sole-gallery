@@ -1,13 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowDown, ArrowUp, Filter, Image as ImageIcon, Plus, Video } from "lucide-react";
+import { ArrowDown, ArrowUp, Filter, Image as ImageIcon, Plus, Video, Trash, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
-interface ContentItem {
+export interface ContentItem {
   id: number;
   type: "photo" | "video";
   title: string;
@@ -29,6 +31,7 @@ interface ContentTabProps {
   setSortPopoverOpen: (open: boolean) => void;
   setFilterType: (type: "all" | "photo" | "video") => void;
   setSortBy: (sort: "newest" | "oldest" | "price-high" | "price-low" | "popular") => void;
+  onUpdateContent?: (updatedContent: ContentItem[]) => void;
 }
 
 const ContentTab: React.FC<ContentTabProps> = ({
@@ -42,7 +45,78 @@ const ContentTab: React.FC<ContentTabProps> = ({
   setSortPopoverOpen,
   setFilterType,
   setSortBy,
+  onUpdateContent,
 }) => {
+  const { toast } = useToast();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentItem, setCurrentItem] = useState<ContentItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+
+  const handleEditClick = (item: ContentItem) => {
+    setCurrentItem(item);
+    setEditTitle(item.title);
+    setEditPrice(item.price.replace("$", ""));
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (item: ContentItem) => {
+    setCurrentItem(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!currentItem || !editTitle || !editPrice) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a new array with the updated item
+    const updatedContent = filteredContent.map(item => 
+      item.id === currentItem.id 
+        ? { 
+            ...item, 
+            title: editTitle, 
+            price: `$${editPrice}` 
+          } 
+        : item
+    );
+    
+    if (onUpdateContent) {
+      onUpdateContent(updatedContent);
+    }
+    
+    setEditDialogOpen(false);
+    
+    toast({
+      title: "Content updated",
+      description: "Your content has been updated successfully",
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!currentItem) return;
+    
+    // Filter out the deleted item
+    const updatedContent = filteredContent.filter(item => item.id !== currentItem.id);
+    
+    if (onUpdateContent) {
+      onUpdateContent(updatedContent);
+    }
+    
+    setDeleteDialogOpen(false);
+    
+    toast({
+      title: "Content deleted",
+      description: "Your content has been moved to trash",
+    });
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -202,14 +276,80 @@ const ContentTab: React.FC<ContentTabProps> = ({
                   <span className="text-gold font-medium">{item.price}</span>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="flex-1">Edit</Button>
-                  <Button variant="destructive" size="sm">Delete</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleEditClick(item)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => handleDeleteClick(item)}
+                  >
+                    <Trash className="h-3 w-3 mr-1" />
+                    Delete
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </CardContent>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Content</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="editTitle" className="text-sm font-medium">Title</label>
+              <Input 
+                id="editTitle" 
+                value={editTitle} 
+                onChange={(e) => setEditTitle(e.target.value)} 
+                placeholder="Enter title"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="editPrice" className="text-sm font-medium">Price ($)</label>
+              <Input 
+                id="editPrice" 
+                value={editPrice} 
+                onChange={(e) => setEditPrice(e.target.value.replace(/[^0-9.]/g, ''))} 
+                placeholder="Enter price"
+                type="text"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Content</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete "{currentItem?.title}"?</p>
+            <p className="text-sm text-gray-500 mt-2">This item will be moved to trash.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
