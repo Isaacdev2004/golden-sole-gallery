@@ -29,6 +29,7 @@ import BuyersHelp from "./pages/help/BuyersHelp";
 import SellersHelp from "./pages/help/SellersHelp";
 import PrivacySecurityHelp from "./pages/help/PrivacySecurityHelp";
 import TroubleshootingHelp from "./pages/help/TroubleshootingHelp";
+import Cookies from "./pages/Cookies";
 // Help content pages
 import BrowsingContentHelp from "./pages/help/browsing-content";
 import UploadingContentHelp from "./pages/help/uploading-content";
@@ -92,6 +93,7 @@ const App = () => (
           <Route path="/help/sellers" element={<SellersHelp />} />
           <Route path="/help/privacy-security" element={<PrivacySecurityHelp />} />
           <Route path="/help/troubleshooting" element={<TroubleshootingHelp />} />
+          <Route path="/cookies" element={<Cookies />} />
           {/* Help content routes */}
           <Route path="/help/browsing-content" element={<BrowsingContentHelp />} />
           <Route path="/help/uploading-content" element={<UploadingContentHelp />} />
