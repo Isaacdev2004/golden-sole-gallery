@@ -13,7 +13,8 @@ import {
   ChevronUp, Image, Video, DollarSign, Star, 
   Users, Upload, BarChart3, Settings, Plus, User,
   X, Instagram, FileText, Camera, Captions, Wallet,
-  CreditCard, Banknote, CheckCircle, ArrowRight
+  CreditCard, Banknote, CheckCircle, ArrowRight,
+  TrendingUp, ArrowUpRight, ArrowDownRight, Eye
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -28,6 +29,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
 
 const SellerDashboard = () => {
   const location = useLocation();
@@ -53,7 +69,7 @@ const SellerDashboard = () => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get("tab");
     
-    if (tabParam && ["overview", "content", "earnings", "settings"].includes(tabParam)) {
+    if (tabParam && ["overview", "content", "earnings", "settings", "analytics"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location]);
@@ -129,6 +145,30 @@ const SellerDashboard = () => {
     { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
     { id: 3, type: "video", title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
   ];
+
+  const revenueData = [
+    { name: 'Jan', revenue: 650 },
+    { name: 'Feb', revenue: 730 },
+    { name: 'Mar', revenue: 840 },
+    { name: 'Apr', revenue: 930 },
+    { name: 'May', revenue: 1230 },
+    { name: 'Jun', revenue: 1450 },
+  ];
+
+  const contentPerformanceData = [
+    { name: 'Photo 1', views: 145, sales: 12 },
+    { name: 'Video 1', views: 245, sales: 8 },
+    { name: 'Photo 2', views: 98, sales: 5 },
+    { name: 'Photo 3', views: 187, sales: 15 },
+    { name: 'Video 2', views: 210, sales: 9 },
+  ];
+
+  const contentTypeData = [
+    { name: 'Photos', value: 137 },
+    { name: 'Videos', value: 42 },
+  ];
+
+  const COLORS = ['#FFD700', '#d4af37', '#FFC72C', '#C5B358'];
 
   const handleUploadButtonClick = () => {
     setUploadDialogOpen(true);
@@ -388,10 +428,11 @@ const SellerDashboard = () => {
           
           <div className="lg:col-span-3">
             <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="content">My Content</TabsTrigger>
                 <TabsTrigger value="earnings">Earnings</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
               
@@ -611,6 +652,153 @@ const SellerDashboard = () => {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Performance Analytics</CardTitle>
+                    <CardDescription>Monitor your content performance and revenue trends</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-8">
+                      <h3 className="text-lg font-medium mb-4">Revenue Trend</h3>
+                      <div className="bg-gray-50 p-4 rounded-lg h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={revenueData}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip
+                              formatter={(value) => [`$${value}`, 'Revenue']}
+                              contentStyle={{ backgroundColor: 'white', borderRadius: '8px', borderColor: '#d4af37' }}
+                            />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="revenue"
+                              stroke="#d4af37"
+                              activeDot={{ r: 8 }}
+                              strokeWidth={2}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Content Performance</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={contentPerformanceData}
+                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: 'white', borderRadius: '8px', borderColor: '#d4af37' }}
+                              />
+                              <Legend />
+                              <Bar dataKey="views" fill="#FFD700" name="Views" />
+                              <Bar dataKey="sales" fill="#d4af37" name="Sales" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Content Type Distribution</h3>
+                        <div className="bg-gray-50 p-4 rounded-lg h-[300px] flex items-center justify-center">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={contentTypeData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {contentTypeData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                formatter={(value) => [value, 'Count']}
+                                contentStyle={{ backgroundColor: 'white', borderRadius: '8px', borderColor: '#d4af37' }}
+                              />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Conversion Rate</p>
+                              <p className="text-2xl font-bold">4.8%</p>
+                              <p className="text-xs text-green-600 flex items-center mt-1">
+                                <ArrowUpRight className="h-3 w-3 mr-1" />
+                                0.5% from last month
+                              </p>
+                            </div>
+                            <div className="bg-green-100 p-3 rounded-full">
+                              <TrendingUp className="h-6 w-6 text-green-600" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Avg. Order Value</p>
+                              <p className="text-2xl font-bold">$22.50</p>
+                              <p className="text-xs text-green-600 flex items-center mt-1">
+                                <ArrowUpRight className="h-3 w-3 mr-1" />
+                                $3.25 from last month
+                              </p>
+                            </div>
+                            <div className="bg-gold/10 p-3 rounded-full">
+                              <DollarSign className="h-6 w-6 text-gold" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-500">Total Impressions</p>
+                              <p className="text-2xl font-bold">18,452</p>
+                              <p className="text-xs text-green-600 flex items-center mt-1">
+                                <ArrowUpRight className="h-3 w-3 mr-1" />
+                                12% from last month
+                              </p>
+                            </div>
+                            <div className="bg-blue-100 p-3 rounded-full">
+                              <Eye className="h-6 w-6 text-blue-600" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </CardContent>
                 </Card>
