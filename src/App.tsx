@@ -21,6 +21,10 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ContentPolicy from "./pages/ContentPolicy";
 import DMCA from "./pages/DMCA";
+import FAQ from "./pages/FAQ";
+import Contact from "./pages/Contact";
+import HelpCenter from "./pages/HelpCenter";
+import ReportAbuse from "./pages/ReportAbuse";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +51,10 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/content-policy" element={<ContentPolicy />} />
           <Route path="/dmca" element={<DMCA />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/report" element={<ReportAbuse />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
