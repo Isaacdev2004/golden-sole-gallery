@@ -34,6 +34,17 @@ const Navigation = () => {
     }
   };
 
+  // Function to navigate to seller dashboard content
+  const navigateToContent = () => {
+    if (isOnSellerDashboard) {
+      // If already on seller dashboard, we'll update the URL with the content parameter
+      navigate("/seller-dashboard?tab=content", { replace: true });
+    } else {
+      // If not on seller dashboard, we'll navigate there with a content parameter
+      navigate("/seller-dashboard?tab=content");
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-md">
       <div className="container mx-auto px-4 py-3">

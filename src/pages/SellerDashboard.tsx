@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -14,7 +15,8 @@ import {
   Users, Upload, BarChart3, Settings, Plus, User,
   X, Instagram, FileText, Camera, Captions, Wallet,
   CreditCard, Banknote, CheckCircle, ArrowRight,
-  TrendingUp, ArrowUpRight, ArrowDownRight, Eye
+  TrendingUp, ArrowUpRight, ArrowDownRight, Eye,
+  Filter, ArrowDown, ArrowUp
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -64,6 +66,13 @@ const SellerDashboard = () => {
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // New state for filter and sort
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
+  const [filterType, setFilterType] = useState<"all" | "photo" | "video">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
+  const [filteredContent, setFilteredContent] = useState(contentItems);
   
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -141,10 +150,43 @@ const SellerDashboard = () => {
   ];
 
   const contentItems = [
-    { id: 1, type: "photo", title: "Beach Day", likes: 24, sales: 7, price: "$5.99", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
-    { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
-    { id: 3, type: "video", title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
+    { id: 1, type: "photo", title: "Beach Day", likes: 24, sales: 7, price: "$5.99", date: "2025-03-15", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
+    { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", date: "2025-03-10", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
+    { id: 3, type: "video", title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", date: "2025-04-01", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
+    { id: 4, type: "photo", title: "Winter Collection", likes: 15, sales: 3, price: "$7.99", date: "2025-02-20", thumbnail: "https://images.unsplash.com/photo-1551489186-cf8726f514f5?w=400&h=400&auto=format&q=80" },
+    { id: 5, type: "video", title: "Beach Sunset", likes: 45, sales: 18, price: "$12.99", date: "2025-03-25", thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" },
   ];
+
+  // Effect to apply filtering and sorting to content items
+  useEffect(() => {
+    let filtered = [...contentItems];
+    
+    // Apply filter
+    if (filterType !== "all") {
+      filtered = filtered.filter(item => item.type === filterType);
+    }
+    
+    // Apply sort
+    switch (sortBy) {
+      case "newest":
+        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        break;
+      case "oldest":
+        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case "price-high":
+        filtered.sort((a, b) => parseFloat(b.price.replace("$", "")) - parseFloat(a.price.replace("$", "")));
+        break;
+      case "price-low":
+        filtered.sort((a, b) => parseFloat(a.price.replace("$", "")) - parseFloat(b.price.replace("$", "")));
+        break;
+      case "popular":
+        filtered.sort((a, b) => b.sales - a.sales);
+        break;
+    }
+    
+    setFilteredContent(filtered);
+  }, [filterType, sortBy]);
 
   const revenueData = [
     { name: 'Jan', revenue: 650 },
@@ -233,6 +275,7 @@ const SellerDashboard = () => {
       likes: 0,
       sales: 0,
       price: `$${price}`,
+      date: new Date().toISOString().split('T')[0],
       thumbnail: filePreview || ""
     };
     
@@ -322,6 +365,10 @@ const SellerDashboard = () => {
 
   const handleAnalyticsClick = () => {
     setActiveTab("analytics");
+  };
+
+  const handleContentClick = () => {
+    setActiveTab("content");
   };
 
   return (
@@ -550,7 +597,10 @@ const SellerDashboard = () => {
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle>My Content</CardTitle>
-                      <Button className="bg-gold hover:bg-gold-dark">
+                      <Button 
+                        className="bg-gold hover:bg-gold-dark"
+                        onClick={handleUploadButtonClick}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
                         Add New
                       </Button>
@@ -561,12 +611,126 @@ const SellerDashboard = () => {
                       <div className="flex-1">
                         <Input placeholder="Search your content..." />
                       </div>
-                      <Button variant="outline">Filter</Button>
-                      <Button variant="outline">Sort</Button>
+                      
+                      <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex gap-1 items-center">
+                            <Filter className="h-4 w-4" />
+                            Filter
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2 bg-white">
+                          <div className="space-y-2">
+                            <h3 className="font-medium text-sm mb-2">Content Type</h3>
+                            <div className="space-y-1">
+                              <Button 
+                                variant={filterType === "all" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${filterType === "all" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setFilterType("all");
+                                  setFilterPopoverOpen(false);
+                                }}
+                              >
+                                All
+                              </Button>
+                              <Button 
+                                variant={filterType === "photo" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${filterType === "photo" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setFilterType("photo");
+                                  setFilterPopoverOpen(false);
+                                }}
+                              >
+                                Photos
+                              </Button>
+                              <Button 
+                                variant={filterType === "video" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${filterType === "video" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setFilterType("video");
+                                  setFilterPopoverOpen(false);
+                                }}
+                              >
+                                Videos
+                              </Button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      
+                      <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex gap-1 items-center">
+                            {sortBy === "newest" || sortBy === "price-high" || sortBy === "popular" ? (
+                              <ArrowDown className="h-4 w-4" />
+                            ) : (
+                              <ArrowUp className="h-4 w-4" />
+                            )}
+                            Sort
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2 bg-white">
+                          <div className="space-y-2">
+                            <h3 className="font-medium text-sm mb-2">Sort By</h3>
+                            <div className="space-y-1">
+                              <Button 
+                                variant={sortBy === "newest" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${sortBy === "newest" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setSortBy("newest");
+                                  setSortPopoverOpen(false);
+                                }}
+                              >
+                                Newest
+                              </Button>
+                              <Button 
+                                variant={sortBy === "oldest" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${sortBy === "oldest" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setSortBy("oldest");
+                                  setSortPopoverOpen(false);
+                                }}
+                              >
+                                Oldest
+                              </Button>
+                              <Button 
+                                variant={sortBy === "price-high" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${sortBy === "price-high" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setSortBy("price-high");
+                                  setSortPopoverOpen(false);
+                                }}
+                              >
+                                Price (High to Low)
+                              </Button>
+                              <Button 
+                                variant={sortBy === "price-low" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${sortBy === "price-low" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setSortBy("price-low");
+                                  setSortPopoverOpen(false);
+                                }}
+                              >
+                                Price (Low to High)
+                              </Button>
+                              <Button 
+                                variant={sortBy === "popular" ? "default" : "ghost"} 
+                                className={`w-full justify-start text-left ${sortBy === "popular" ? "bg-gold hover:bg-gold-dark" : ""}`}
+                                onClick={() => {
+                                  setSortBy("popular");
+                                  setSortPopoverOpen(false);
+                                }}
+                              >
+                                Most Popular
+                              </Button>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {contentItems.map((item) => (
+                      {filteredContent.map((item) => (
                         <Card key={item.id} className="overflow-hidden">
                           <div className="relative h-48 bg-gray-100">
                             <img 
