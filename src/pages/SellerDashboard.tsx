@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -805,4 +806,135 @@ const SellerDashboard = () => {
                     variant="link"
                     size="sm"
                     className="text-xs"
-                    onClick={() => setWithdrawAmount(sellerData.balance.toString
+                    onClick={() => setWithdrawAmount(sellerData.balance.toString())}
+                  >
+                    Max amount
+                  </Button>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Note (optional)</label>
+                  <Textarea
+                    placeholder="Add a note for your records"
+                    value={withdrawNote}
+                    onChange={(e) => setWithdrawNote(e.target.value)}
+                    className="mt-1"
+                    rows={2}
+                  />
+                </div>
+                
+                <Button onClick={handleWithdrawAmountSubmit} className="w-full">
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {withdrawStage === "confirm" && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded">
+                  <h3 className="text-sm font-medium mb-2">Withdrawal Summary</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Amount:</span>
+                      <span className="text-sm font-medium">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                    </div>
+                    {getWithdrawalFee() > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Fee:</span>
+                        <span className="text-sm font-medium text-red-600">- ${getWithdrawalFee().toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t pt-2 mt-2">
+                      <span className="text-sm font-medium">Total:</span>
+                      <span className="text-sm font-medium">${getWithdrawalTotal().toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 bg-gray-50 p-4 rounded">
+                  <div className="p-2 bg-gray-200 rounded-full">
+                    {paymentMethods.find(method => method.id === selectedPaymentMethod)?.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {paymentMethods.find(method => method.id === selectedPaymentMethod)?.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {paymentMethods.find(method => method.id === selectedPaymentMethod)?.description}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    onClick={handleWithdrawalConfirmation} 
+                    className="w-full"
+                    disabled={isProcessingWithdrawal}
+                  >
+                    {isProcessingWithdrawal ? "Processing..." : "Confirm Withdrawal"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setWithdrawStage("amount")}
+                    disabled={isProcessingWithdrawal}
+                  >
+                    Go Back
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {withdrawStage === "success" && (
+            <div className="py-4 flex flex-col items-center">
+              <div className="bg-green-100 p-4 rounded-full mb-4">
+                <CheckCircle className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">Withdrawal Successful</h3>
+              <p className="text-sm text-gray-500 text-center mb-4">
+                Your withdrawal of ${parseFloat(withdrawAmount).toFixed(2)} has been initiated.
+              </p>
+              <div className="bg-gray-50 p-4 rounded w-full mb-4">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Amount:</span>
+                  <span className="text-sm font-medium">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Payment Method:</span>
+                  <span className="text-sm font-medium">
+                    {paymentMethods.find(method => method.id === selectedPaymentMethod)?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Expected Arrival:</span>
+                  <span className="text-sm font-medium">
+                    {paymentMethods.find(method => method.id === selectedPaymentMethod)?.description}
+                  </span>
+                </div>
+              </div>
+              <Button 
+                className="w-full"
+                onClick={closeWithdrawDialog}
+              >
+                Done <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+          
+          <DialogFooter>
+            {(withdrawStage !== "confirm" && withdrawStage !== "success") && (
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default SellerDashboard;
