@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   ChevronUp, Image, Video, DollarSign, Star, 
   Users, Upload, BarChart3, Settings, Plus, User,
-  X, Instagram, FileText, Camera, Captions
+  X, Instagram, FileText, Camera, Captions, Wallet,
+  CreditCard, BankNote, CheckCircle, ArrowRight
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -24,10 +25,14 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 const SellerDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [withdrawStage, setWithdrawStage] = useState<"method" | "amount" | "confirm" | "success">("method");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [fileType, setFileType] = useState<"image" | "video" | null>(null);
@@ -35,6 +40,10 @@ const SellerDashboard = () => {
   const [caption, setCaption] = useState("");
   const [price, setPrice] = useState("");
   const [uploadStep, setUploadStep] = useState<"select" | "details">("select");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawNote, setWithdrawNote] = useState("");
+  const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
@@ -68,6 +77,41 @@ const SellerDashboard = () => {
       videos: 42,
     }
   };
+
+  const paymentMethods = [
+    { 
+      id: "bank_transfer", 
+      name: "Bank Transfer", 
+      icon: <BankNote className="h-6 w-6" />,
+      description: "2-3 business days",
+      fee: "No fee",
+      isDefault: true
+    },
+    { 
+      id: "paypal", 
+      name: "PayPal", 
+      icon: <DollarSign className="h-6 w-6" />, 
+      description: "Instant",
+      fee: "1% fee",
+      isDefault: false
+    },
+    { 
+      id: "credit_card", 
+      name: "Credit/Debit Card", 
+      icon: <CreditCard className="h-6 w-6" />, 
+      description: "1-2 business days",
+      fee: "2.5% fee",
+      isDefault: false
+    },
+    { 
+      id: "wallet", 
+      name: "Platform Wallet", 
+      icon: <Wallet className="h-6 w-6" />, 
+      description: "Instant",
+      fee: "No fee",
+      isDefault: false
+    }
+  ];
 
   const contentItems = [
     { id: 1, type: "photo", title: "Beach Day", likes: 24, sales: 7, price: "$5.99", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
@@ -143,6 +187,82 @@ const SellerDashboard = () => {
     
     setUploadDialogOpen(false);
     resetUploadForm();
+  };
+
+  const handleWithdrawButtonClick = () => {
+    setSelectedPaymentMethod(paymentMethods.find(method => method.isDefault)?.id || null);
+    setWithdrawAmount("");
+    setWithdrawNote("");
+    setWithdrawStage("method");
+    setWithdrawDialogOpen(true);
+  };
+
+  const handlePaymentMethodSelect = (methodId: string) => {
+    setSelectedPaymentMethod(methodId);
+    setWithdrawStage("amount");
+  };
+
+  const handleWithdrawAmountSubmit = () => {
+    const amount = parseFloat(withdrawAmount);
+    
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid withdrawal amount",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (amount > sellerData.balance) {
+      toast({
+        title: "Insufficient funds",
+        description: "You cannot withdraw more than your available balance",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setWithdrawStage("confirm");
+  };
+
+  const handleWithdrawalConfirmation = () => {
+    setIsProcessingWithdrawal(true);
+    
+    setTimeout(() => {
+      setIsProcessingWithdrawal(false);
+      setWithdrawStage("success");
+      
+      toast({
+        title: "Withdrawal initiated",
+        description: `$${withdrawAmount} will be sent to your selected payment method`,
+      });
+    }, 1500);
+  };
+
+  const closeWithdrawDialog = () => {
+    setWithdrawDialogOpen(false);
+    setTimeout(() => {
+      setWithdrawStage("method");
+    }, 300);
+  };
+
+  const getWithdrawalFee = () => {
+    const selectedMethod = paymentMethods.find(method => method.id === selectedPaymentMethod);
+    const amount = parseFloat(withdrawAmount) || 0;
+    
+    if (selectedMethod?.id === "paypal") {
+      return amount * 0.01; // 1% fee
+    } else if (selectedMethod?.id === "credit_card") {
+      return amount * 0.025; // 2.5% fee
+    }
+    
+    return 0; // No fee
+  };
+
+  const getWithdrawalTotal = () => {
+    const amount = parseFloat(withdrawAmount) || 0;
+    return amount - getWithdrawalFee();
   };
 
   return (
@@ -335,7 +455,11 @@ const SellerDashboard = () => {
                           <Upload className="h-6 w-6 mb-1" />
                           <span>Upload Content</span>
                         </Button>
-                        <Button className="h-auto py-4 flex flex-col" variant="outline">
+                        <Button 
+                          className="h-auto py-4 flex flex-col" 
+                          variant="outline"
+                          onClick={handleWithdrawButtonClick}
+                        >
                           <DollarSign className="h-6 w-6 mb-1" />
                           <span>Withdraw Funds</span>
                         </Button>
@@ -418,7 +542,12 @@ const SellerDashboard = () => {
                         <CardContent className="pt-6">
                           <p className="text-sm text-gray-500">Available Balance</p>
                           <p className="text-2xl font-bold text-gold">${sellerData.balance.toFixed(2)}</p>
-                          <Button className="w-full mt-2">Withdraw</Button>
+                          <Button 
+                            className="w-full mt-2"
+                            onClick={handleWithdrawButtonClick}
+                          >
+                            Withdraw
+                          </Button>
                         </CardContent>
                       </Card>
                       
@@ -606,6 +735,247 @@ const SellerDashboard = () => {
               <Button onClick={triggerFileInput}>Select File</Button>
             ) : (
               <Button onClick={handleSubmitUpload}>Upload</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={withdrawDialogOpen} onOpenChange={closeWithdrawDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {withdrawStage === "method" && "Select Payment Method"}
+              {withdrawStage === "amount" && "Withdraw Funds"}
+              {withdrawStage === "confirm" && "Confirm Withdrawal"}
+              {withdrawStage === "success" && "Withdrawal Successful"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {withdrawStage === "method" && (
+            <div className="py-4">
+              <RadioGroup className="space-y-3">
+                {paymentMethods.map(method => (
+                  <div 
+                    key={method.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${
+                      selectedPaymentMethod === method.id ? 'bg-gold/5 border-gold' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handlePaymentMethodSelect(method.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${selectedPaymentMethod === method.id ? 'bg-gold/20' : 'bg-gray-100'}`}>
+                        {method.icon}
+                      </div>
+                      <div>
+                        <p className="font-medium">{method.name}</p>
+                        <p className="text-xs text-gray-500">{method.description} • {method.fee}</p>
+                      </div>
+                    </div>
+                    <RadioGroupItem value={method.id} id={method.id} className="mr-2" />
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+          
+          {withdrawStage === "amount" && (
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium">Available Balance</label>
+                  <span className="text-sm font-medium text-gold">${sellerData.balance.toFixed(2)}</span>
+                </div>
+                
+                <div className="flex gap-2">
+                  <span className="flex items-center px-3 bg-gray-100 rounded-l border border-gray-300">$</span>
+                  <Input
+                    placeholder="Enter amount"
+                    type="number"
+                    min="0.01"
+                    max={sellerData.balance}
+                    step="0.01"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    className="rounded-l-none flex-1"
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setWithdrawAmount(sellerData.balance.toString())}
+                  >
+                    Withdraw maximum
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Note (optional)</label>
+                <Textarea
+                  placeholder="Add a note for your records"
+                  value={withdrawNote}
+                  onChange={(e) => setWithdrawNote(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Selected payment method:</span>
+                  <span className="font-medium">
+                    {paymentMethods.find(m => m.id === selectedPaymentMethod)?.name}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  {paymentMethods.find(m => m.id === selectedPaymentMethod)?.description}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {withdrawStage === "confirm" && (
+            <div className="space-y-6 py-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">Amount:</span>
+                  <span className="font-medium">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">Fee:</span>
+                  <span>${getWithdrawalFee().toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2 mt-2 flex justify-between">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-bold text-gold">${getWithdrawalTotal().toFixed(2)}</span>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-full bg-gray-100">
+                    {paymentMethods.find(m => m.id === selectedPaymentMethod)?.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {paymentMethods.find(m => m.id === selectedPaymentMethod)?.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {paymentMethods.find(m => m.id === selectedPaymentMethod)?.description}
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedPaymentMethod === "bank_transfer" && (
+                  <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm">
+                    Funds will be transferred to your linked bank account. Please allow 2-3 business days for processing.
+                  </div>
+                )}
+                
+                {selectedPaymentMethod === "paypal" && (
+                  <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm">
+                    Funds will be transferred to your PayPal account instantly. A 1% fee applies.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {withdrawStage === "success" && (
+            <div className="py-6 flex flex-col items-center justify-center">
+              <div className="bg-green-100 p-3 rounded-full mb-4">
+                <CheckCircle className="h-12 w-12 text-green-600" />
+              </div>
+              
+              <h3 className="text-xl font-medium mb-2">Withdrawal Initiated</h3>
+              <p className="text-center text-gray-600 mb-4">
+                Your withdrawal of ${parseFloat(withdrawAmount).toFixed(2)} has been initiated and will be processed shortly.
+              </p>
+              
+              <div className="bg-gray-50 p-3 rounded-lg w-full mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-600">Amount:</span>
+                  <span className="font-medium">${parseFloat(withdrawAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-600">Payment Method:</span>
+                  <span className="font-medium">
+                    {paymentMethods.find(m => m.id === selectedPaymentMethod)?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Estimated Arrival:</span>
+                  <span className="font-medium">
+                    {paymentMethods.find(m => m.id === selectedPaymentMethod)?.description}
+                  </span>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-500 text-center">
+                You will receive a confirmation email with the details of your withdrawal.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter>
+            {withdrawStage === "method" && (
+              <>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button 
+                  onClick={() => handlePaymentMethodSelect(selectedPaymentMethod || paymentMethods[0].id)}
+                  disabled={!selectedPaymentMethod}
+                >
+                  Continue
+                </Button>
+              </>
+            )}
+            
+            {withdrawStage === "amount" && (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setWithdrawStage("method")}
+                >
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleWithdrawAmountSubmit}
+                  disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0 || parseFloat(withdrawAmount) > sellerData.balance}
+                >
+                  Continue
+                </Button>
+              </>
+            )}
+            
+            {withdrawStage === "confirm" && (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setWithdrawStage("amount")}
+                >
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleWithdrawalConfirmation}
+                  disabled={isProcessingWithdrawal}
+                >
+                  {isProcessingWithdrawal ? (
+                    <span className="flex items-center gap-2">Processing...</span>
+                  ) : (
+                    <span className="flex items-center gap-2">Confirm Withdrawal <ArrowRight className="h-4 w-4" /></span>
+                  )}
+                </Button>
+              </>
+            )}
+            
+            {withdrawStage === "success" && (
+              <Button onClick={closeWithdrawDialog}>
+                Done
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>
