@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
   const [showAllPurchases, setShowAllPurchases] = useState(false);
+  const [showAllFavorites, setShowAllFavorites] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -42,6 +43,9 @@ const BuyerDashboard = () => {
   const favorites = [
     { id: 1, name: "SoleFocus", displayName: "Emma Johnson", rating: 4.9, content: { photos: 98, videos: 34 }, image: "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=400&h=400&auto=format&q=80" },
     { id: 2, name: "WalkThis_Way", displayName: "Alexander Smith", rating: 4.7, content: { photos: 104, videos: 27 }, image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&auto=format&q=80" },
+    { id: 3, name: "FootPrintArt", displayName: "Olivia Garcia", rating: 4.8, content: { photos: 85, videos: 42 }, image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80" },
+    { id: 4, name: "StepMaster", displayName: "Daniel Brown", rating: 4.6, content: { photos: 76, videos: 31 }, image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&auto=format&q=80" },
+    { id: 5, name: "SoleStyle", displayName: "Sophia Martinez", rating: 4.9, content: { photos: 112, videos: 45 }, image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&auto=format&q=80" },
   ];
   
   const userData = {
@@ -53,6 +57,21 @@ const BuyerDashboard = () => {
 
   const handleViewPurchase = (purchaseId) => {
     navigate(`/purchase/${purchaseId}`);
+  };
+
+  const handleViewSellerProfile = (sellerId) => {
+    navigate(`/seller/${sellerId}`);
+    toast({
+      title: "Navigating to seller profile",
+      description: "Opening seller details page...",
+    });
+  };
+
+  const handleToggleFollow = (sellerId) => {
+    toast({
+      title: "Follow status updated",
+      description: "Your follow preferences have been saved.",
+    });
   };
 
   return (
@@ -207,15 +226,73 @@ const BuyerDashboard = () => {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>Favorite Creators</CardTitle>
-                      <Button variant="outline" size="sm">
-                        View All
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            View All
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                          <DialogHeader>
+                            <DialogTitle>All Favorite Creators</DialogTitle>
+                          </DialogHeader>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Profile</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Username</TableHead>
+                                <TableHead>Content</TableHead>
+                                <TableHead>Rating</TableHead>
+                                <TableHead>Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {favorites.map((seller) => (
+                                <TableRow key={seller.id}>
+                                  <TableCell>
+                                    <Avatar className="h-10 w-10 border border-gold">
+                                      <AvatarImage src={seller.image} />
+                                      <AvatarFallback className="bg-gold text-white">
+                                        {seller.displayName.charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  </TableCell>
+                                  <TableCell>{seller.displayName}</TableCell>
+                                  <TableCell>@{seller.name}</TableCell>
+                                  <TableCell>{seller.content.photos} Photos • {seller.content.videos} Videos</TableCell>
+                                  <TableCell>{seller.rating} ★</TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleViewSellerProfile(seller.id)}
+                                      >
+                                        View
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        variant="outline" 
+                                        className="border-gold text-gold hover:bg-gold/10"
+                                        onClick={() => handleToggleFollow(seller.id)}
+                                      >
+                                        Following
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {favorites.length > 0 ? (
+                    {favorites.slice(0, 2).length > 0 ? (
                       <div className="space-y-4">
-                        {favorites.map((seller) => (
+                        {favorites.slice(0, 2).map((seller) => (
                           <div key={seller.id} className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                             <Avatar className="h-14 w-14 border-2 border-gold">
                               <AvatarImage src={seller.image} />
@@ -230,7 +307,12 @@ const BuyerDashboard = () => {
                                 <span className="text-xs text-gray-500">{seller.content.photos} Photos • {seller.content.videos} Videos</span>
                               </div>
                             </div>
-                            <Button size="sm" variant="outline" className="border-gold text-gold hover:bg-gold/10">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="border-gold text-gold hover:bg-gold/10"
+                              onClick={() => handleToggleFollow(seller.id)}
+                            >
                               <Heart className="h-4 w-4 mr-1" />
                               Following
                             </Button>
