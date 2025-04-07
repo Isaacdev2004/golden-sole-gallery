@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,14 +7,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   ChevronUp, Image, Video, DollarSign, Star, 
-  Users, Upload, BarChart3, Settings, Plus, User
+  Users, Upload, BarChart3, Settings, Plus, User,
+  X, Instagram, FileText, Camera, Captions
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 const SellerDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<"image" | "video" | null>(null);
+  const [title, setTitle] = useState("");
+  const [caption, setCaption] = useState("");
+  const [price, setPrice] = useState("");
+  const [uploadStep, setUploadStep] = useState<"select" | "details">("select");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   const sellerData = {
     name: "Olivia Grace",
@@ -52,6 +74,76 @@ const SellerDashboard = () => {
     { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
     { id: 3, type: "video", title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
   ];
+
+  const handleUploadButtonClick = () => {
+    setUploadDialogOpen(true);
+    resetUploadForm();
+  };
+
+  const resetUploadForm = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    setFileType(null);
+    setTitle("");
+    setCaption("");
+    setPrice("");
+    setUploadStep("select");
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const fileReader = new FileReader();
+    fileReader.onload = (e) => {
+      const result = e.target?.result as string;
+      setFilePreview(result);
+    };
+    fileReader.readAsDataURL(file);
+    
+    setSelectedFile(file);
+    
+    if (file.type.startsWith("image/")) {
+      setFileType("image");
+    } else if (file.type.startsWith("video/")) {
+      setFileType("video");
+    }
+    
+    setUploadStep("details");
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleSubmitUpload = () => {
+    if (!selectedFile || !title || !price) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Content uploaded successfully!",
+      description: "Your new content is now available on your profile",
+    });
+    
+    const newContentItem = {
+      id: contentItems.length + 1,
+      type: fileType === "image" ? "photo" : "video",
+      title: title,
+      likes: 0,
+      sales: 0,
+      price: `$${price}`,
+      thumbnail: filePreview || ""
+    };
+    
+    setUploadDialogOpen(false);
+    resetUploadForm();
+  };
 
   return (
     <>
@@ -236,7 +328,10 @@ const SellerDashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-3">
-                        <Button className="h-auto py-4 flex flex-col bg-gold hover:bg-gold-dark">
+                        <Button 
+                          className="h-auto py-4 flex flex-col bg-gold hover:bg-gold-dark"
+                          onClick={handleUploadButtonClick}
+                        >
                           <Upload className="h-6 w-6 mb-1" />
                           <span>Upload Content</span>
                         </Button>
@@ -402,6 +497,120 @@ const SellerDashboard = () => {
           </div>
         </div>
       </div>
+      
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {uploadStep === "select" ? "Upload New Content" : "Content Details"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {uploadStep === "select" ? (
+            <div className="grid gap-4 py-4">
+              <div 
+                className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={triggerFileInput}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept="image/*,video/*"
+                />
+                <div className="bg-gold/20 p-3 rounded-full">
+                  <Camera className="h-6 w-6 text-gold" />
+                </div>
+                <p className="font-medium">Click to upload</p>
+                <p className="text-sm text-gray-500">
+                  Supports images and videos
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Max file size: 50MB
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-4">
+                <div className="relative w-24 h-24 rounded bg-gray-100 overflow-hidden">
+                  {fileType === "image" && filePreview && (
+                    <img
+                      src={filePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  {fileType === "video" && filePreview && (
+                    <video
+                      src={filePreview}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  )}
+                  <Badge className="absolute top-1 right-1 bg-black bg-opacity-60">
+                    {fileType === "image" ? <Image className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
+                    {fileType}
+                  </Badge>
+                </div>
+                <div className="space-y-2 flex-1">
+                  <Input
+                    id="title"
+                    placeholder="Title *"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex gap-2">
+                    <span className="flex items-center px-3 bg-gray-100 rounded-l border border-gray-300">$</span>
+                    <Input
+                      id="price"
+                      placeholder="Price *"
+                      type="number"
+                      min="0.99"
+                      step="0.01"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="rounded-l-none flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-500" />
+                  <label htmlFor="caption" className="text-sm font-medium">Caption</label>
+                </div>
+                <Textarea
+                  id="caption"
+                  placeholder="Write a caption for your content..."
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  rows={3}
+                />
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <p>Add hashtags and mentions with # and @</p>
+                  <p>{caption.length}/2200</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            {uploadStep === "select" ? (
+              <Button onClick={triggerFileInput}>Select File</Button>
+            ) : (
+              <Button onClick={handleSubmitUpload}>Upload</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <Footer />
     </>
   );
