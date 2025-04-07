@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -32,7 +31,6 @@ const BuyerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Mock data for buyer dashboard with more purchases for the view all dialog
   const recentPurchases = [
     { id: 1, name: "Summer Collection", seller: "GoldenSteps", price: "$15.00", date: "April 3, 2025", image: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
     { id: 2, name: "Beach Day Set", seller: "ArtsyToes", price: "$12.50", date: "April 1, 2025", image: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
@@ -54,12 +52,7 @@ const BuyerDashboard = () => {
   };
 
   const handleViewPurchase = (purchaseId) => {
-    toast({
-      title: "Viewing purchase details",
-      description: `Viewing details for purchase #${purchaseId}`,
-    });
-    // In a real app, this would navigate to a purchase detail page
-    // navigate(`/purchase/${purchaseId}`);
+    navigate(`/purchase/${purchaseId}`);
   };
 
   return (
@@ -69,7 +62,6 @@ const BuyerDashboard = () => {
         <h1 className="text-3xl font-bold mb-6">Buyer Dashboard</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* User Profile Summary */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle>Your Profile</CardTitle>
@@ -100,7 +92,6 @@ const BuyerDashboard = () => {
             </CardContent>
           </Card>
           
-          {/* Main Content Area */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="purchases" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-3 mb-6">
@@ -289,7 +280,6 @@ const BuyerDashboard = () => {
                               <p className="text-xs text-gray-500">Let sellers know when you're online</p>
                             </div>
                             <div>
-                              {/* Placeholder for toggle */}
                               <div className="h-6 w-12 bg-gray-200 rounded-full"></div>
                             </div>
                           </div>
@@ -299,7 +289,6 @@ const BuyerDashboard = () => {
                               <p className="text-xs text-gray-500">Receive updates and offers by email</p>
                             </div>
                             <div>
-                              {/* Placeholder for toggle */}
                               <div className="h-6 w-12 bg-gold rounded-full"></div>
                             </div>
                           </div>
