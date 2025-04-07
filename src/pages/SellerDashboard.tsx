@@ -40,13 +40,13 @@ const SellerDashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
-  // Define the content items
+  // Define the content items - make sure 'type' is explicitly "photo" or "video"
   const contentItems = [
-    { id: 1, type: "photo", title: "Beach Day", likes: 24, sales: 7, price: "$5.99", date: "2025-03-15", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
-    { id: 2, type: "photo", title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", date: "2025-03-10", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
-    { id: 3, type: "video", title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", date: "2025-04-01", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
-    { id: 4, type: "photo", title: "Winter Collection", likes: 15, sales: 3, price: "$7.99", date: "2025-02-20", thumbnail: "https://images.unsplash.com/photo-1551489186-cf8726f514f5?w=400&h=400&auto=format&q=80" },
-    { id: 5, type: "video", title: "Beach Sunset", likes: 45, sales: 18, price: "$12.99", date: "2025-03-25", thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" },
+    { id: 1, type: "photo" as const, title: "Beach Day", likes: 24, sales: 7, price: "$5.99", date: "2025-03-15", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
+    { id: 2, type: "photo" as const, title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", date: "2025-03-10", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
+    { id: 3, type: "video" as const, title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", date: "2025-04-01", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
+    { id: 4, type: "photo" as const, title: "Winter Collection", likes: 15, sales: 3, price: "$7.99", date: "2025-02-20", thumbnail: "https://images.unsplash.com/photo-1551489186-cf8726f514f5?w=400&h=400&auto=format&q=80" },
+    { id: 5, type: "video" as const, title: "Beach Sunset", likes: 45, sales: 18, price: "$12.99", date: "2025-03-25", thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" },
   ];
 
   // State for filters and sorting
@@ -245,7 +245,7 @@ const SellerDashboard = () => {
     
     const newContentItem = {
       id: contentItems.length + 1,
-      type: fileType === "image" ? "photo" : "video",
+      type: fileType === "image" ? "photo" as const : "video" as const,
       title: title,
       likes: 0,
       sales: 0,
