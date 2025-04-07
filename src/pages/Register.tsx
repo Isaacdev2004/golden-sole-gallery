@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,12 +14,17 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [accountType, setAccountType] = useState("buyer");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -39,8 +44,39 @@ const Register = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle registration - to be implemented with authentication
+    setIsLoading(true);
+    
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+    
+    // In a real application, you would send this data to your backend
+    // For now, we'll simulate a registration process
     console.log("Register with:", { ...formData, accountType });
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      
+      // Show success toast
+      toast({
+        title: "Registration successful!",
+        description: `Welcome to Magnificent Soles, ${formData.fullName}!`,
+      });
+      
+      // Redirect based on account type
+      if (accountType === "seller") {
+        navigate("/seller-dashboard");
+      } else {
+        navigate("/buyer-dashboard");
+      }
+    }, 1500);
   };
 
   return (
@@ -189,9 +225,9 @@ const Register = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-gold hover:bg-gold-dark"
-                    disabled={!formData.agreeTerms || !formData.agreeAge}
+                    disabled={!formData.agreeTerms || !formData.agreeAge || isLoading}
                   >
-                    Create Account
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
 

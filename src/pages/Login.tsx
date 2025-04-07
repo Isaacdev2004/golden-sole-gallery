@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -19,11 +20,38 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login - to be implemented with authentication
+    setIsLoading(true);
+    
+    // In a real application, you would validate credentials against your backend
+    // For now, we'll simulate a login process
     console.log("Login with:", { email, password });
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      
+      // For demonstration purposes, determine user type based on email
+      // In a real app, this would come from your authentication system
+      const isSeller = email.includes("seller") || email.includes("golden");
+      
+      // Show success toast
+      toast({
+        title: "Login successful!",
+        description: `Welcome back, ${isSeller ? "Seller" : "Buyer"}!`,
+      });
+      
+      // Redirect based on user role
+      if (isSeller) {
+        navigate("/seller-dashboard");
+      } else {
+        navigate("/buyer-dashboard");
+      }
+    }, 1500);
   };
 
   return (
@@ -83,8 +111,12 @@ const Login = () => {
                       </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-gold hover:bg-gold-dark">
-                    Sign In
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gold hover:bg-gold-dark"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
 
