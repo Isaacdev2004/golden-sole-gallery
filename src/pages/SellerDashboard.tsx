@@ -721,7 +721,7 @@ const SellerDashboard = () => {
                 />
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <p>Add hashtags and mentions with # and @</p>
-                  <p>{caption.length}/2200}</p>
+                  <p>{caption.length}/2200</p>
                 </div>
               </div>
             </div>
