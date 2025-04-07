@@ -1,12 +1,16 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import Footer from "@/components/Footer";
+import { useToast } from "@/hooks/use-toast";
 
 const PricingPage = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const tiers = [
     {
       name: "Basic",
@@ -20,7 +24,15 @@ const PricingPage = () => {
         "90% seller commission"
       ],
       cta: "Get Started",
-      highlighted: false
+      highlighted: false,
+      action: () => {
+        // For new users, redirect to register page
+        navigate("/register", { state: { plan: "basic" } });
+        toast({
+          title: "Basic Plan Selected",
+          description: "You've selected our Basic plan. Complete registration to get started."
+        });
+      }
     },
     {
       name: "Pro",
@@ -35,7 +47,15 @@ const PricingPage = () => {
         "Custom watermarks"
       ],
       cta: "Sign Up",
-      highlighted: true
+      highlighted: true,
+      action: () => {
+        // For new users, redirect to register page with pro plan selected
+        navigate("/register", { state: { plan: "pro" } });
+        toast({
+          title: "Pro Plan Selected",
+          description: "You've selected our Pro plan. Complete registration to upgrade your experience."
+        });
+      }
     },
     {
       name: "Premium",
@@ -51,7 +71,21 @@ const PricingPage = () => {
         "Early access to new features"
       ],
       cta: "Contact Sales",
-      highlighted: false
+      highlighted: false,
+      action: () => {
+        // For Premium, we'll show a toast and could redirect to a contact form
+        toast({
+          title: "Premium Plan Inquiry",
+          description: "Thank you for your interest! Our sales team will contact you shortly."
+        });
+        // Simulate sending user info to sales team
+        setTimeout(() => {
+          toast({
+            title: "Request Received",
+            description: "A sales representative will reach out within 24 hours."
+          });
+        }, 2000);
+      }
     }
   ];
 
@@ -93,6 +127,7 @@ const PricingPage = () => {
                 <CardFooter>
                   <Button 
                     className={`w-full ${tier.highlighted ? "bg-gold hover:bg-gold-dark" : ""}`}
+                    onClick={tier.action}
                   >
                     {tier.cta}
                   </Button>
@@ -106,7 +141,17 @@ const PricingPage = () => {
             <p className="text-gray-600 mb-6">
               Contact our sales team for custom plans tailored to your specific requirements
             </p>
-            <Button variant="outline">Contact Sales</Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                toast({
+                  title: "Custom Plan Request",
+                  description: "Our team will reach out to discuss your custom requirements."
+                });
+              }}
+            >
+              Contact Sales
+            </Button>
           </div>
         </div>
 
