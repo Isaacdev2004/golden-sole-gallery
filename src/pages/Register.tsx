@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,17 +14,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/context/AuthContext";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [accountType, setAccountType] = useState("buyer");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const location = useLocation();
+  const { user, signUp, loading } = useAuth();
   
   // Extract plan info from location state
   const selectedPlan = location.state?.plan || null;
@@ -43,15 +41,13 @@ const Register = () => {
   useEffect(() => {
     if (selectedPlan) {
       setAccountType("seller");
-      
-      if (hasPaid) {
-        toast({
-          title: "Plan Purchase Complete",
-          description: `You've purchased the ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan. Complete registration to get started.`,
-        });
-      }
     }
-  }, [selectedPlan, hasPaid, toast]);
+  }, [selectedPlan]);
+
+  // Redirect if already authenticated
+  if (user && !loading) {
+    return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -61,41 +57,27 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      setIsLoading(false);
       return;
     }
     
-    // In a real application, you would send this data to your backend
-    // For now, we'll simulate a registration process
-    console.log("Register with:", { ...formData, accountType, selectedPlan, hasPaid });
-    
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await signUp(
+        formData.email,
+        formData.password,
+        formData.fullName,
+        accountType
+      );
       
-      // Show success toast
-      toast({
-        title: "Registration successful!",
-        description: `Welcome to Magnificent Soles, ${formData.fullName}!`,
-      });
-      
-      // Redirect based on account type
-      if (accountType === "seller") {
-        navigate("/seller-dashboard");
-      } else {
-        navigate("/buyer-dashboard");
-      }
-    }, 1500);
+      // Navigation is handled by auth state change in AuthContext
+    } catch (error) {
+      // Error is already handled by auth context
+      console.error("Registration error:", error);
+    }
   };
 
   return (
@@ -259,9 +241,9 @@ const Register = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-gold hover:bg-gold-dark"
-                    disabled={!formData.agreeTerms || !formData.agreeAge || isLoading}
+                    disabled={!formData.agreeTerms || !formData.agreeAge || loading}
                   >
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                    {loading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
 

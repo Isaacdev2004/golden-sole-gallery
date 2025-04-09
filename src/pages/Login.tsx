@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,46 +15,35 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accountType, setAccountType] = useState("buyer");
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { signIn, user, loading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // If user is already logged in, redirect to appropriate dashboard
+  if (user && !loading) {
+    return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // In a real application, you would validate credentials against your backend
-    // For now, we'll simulate a login process
-    console.log("Login with:", { email, password, accountType });
-    
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await signIn(email, password);
       
-      // Account type is now explicitly selected by the user
-      const isSeller = accountType === "seller";
+      // The navigation happens automatically through the auth state change
+      // The toast will be shown via the auth context
       
-      // Show success toast
-      toast({
-        title: "Login successful!",
-        description: `Welcome back, ${isSeller ? "Seller" : "Buyer"}!`,
-      });
-      
-      // Redirect based on user role
-      if (isSeller) {
-        navigate("/seller-dashboard");
-      } else {
-        navigate("/buyer-dashboard");
-      }
-    }, 1500);
+    } catch (error) {
+      // Error is handled in the auth context
+      console.error("Login error:", error);
+    }
   };
 
   return (
@@ -132,9 +121,9 @@ const Login = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-gold hover:bg-gold-dark"
-                    disabled={isLoading}
+                    disabled={loading}
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
 

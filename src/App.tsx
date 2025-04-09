@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -66,68 +68,86 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/content/:id" element={<ContentDetail />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/sellers" element={<Sellers />} />
-          <Route path="/seller/:id" element={<SellerProfile />} />
-          <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
-          <Route path="/seller-dashboard" element={<SellerDashboard />} />
-          <Route path="/purchase/:id" element={<PurchaseDetail />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/content-policy" element={<ContentPolicy />} />
-          <Route path="/dmca" element={<DMCA />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/help" element={<HelpCenter />} />
-          <Route path="/help/buyers" element={<BuyersHelp />} />
-          <Route path="/help/sellers" element={<SellersHelp />} />
-          <Route path="/help/privacy-security" element={<PrivacySecurityHelp />} />
-          <Route path="/help/troubleshooting" element={<TroubleshootingHelp />} />
-          <Route path="/cookies" element={<Cookies />} />
-          {/* Help content routes */}
-          <Route path="/help/browsing-content" element={<BrowsingContentHelp />} />
-          <Route path="/help/uploading-content" element={<UploadingContentHelp />} />
-          <Route path="/help/two-factor" element={<TwoFactorHelp />} />
-          <Route path="/help/login-problems" element={<LoginProblemsHelp />} />
-          {/* New help content routes */}
-          <Route path="/help/purchasing" element={<PurchasingHelp />} />
-          <Route path="/help/messaging-sellers" element={<MessagingSellersHelp />} />
-          <Route path="/help/buyer-protection" element={<BuyerProtectionHelp />} />
-          <Route path="/help/seller-dashboard" element={<SellerDashboardHelp />} />
-          <Route path="/help/pricing-content" element={<PricingContentHelp />} />
-          <Route path="/help/analytics" element={<AnalyticsHelp />} />
-          <Route path="/help/promotions" element={<PromotionsHelp />} />
-          <Route path="/help/privacy-features" element={<PrivacyFeaturesHelp />} />
-          <Route path="/help/security-tips" element={<SecurityTipsHelp />} />
-          <Route path="/help/content-protection" element={<ContentProtectionHelp />} />
-          <Route path="/help/payment-issues" element={<PaymentIssuesHelp />} />
-          <Route path="/help/upload-troubleshooting" element={<UploadTroubleshootingHelp />} />
-          <Route path="/help/account-recovery" element={<AccountRecoveryHelp />} />
-          <Route path="/help/content-guidelines" element={<ContentGuidelinesHelp />} />
-          <Route path="/help/custom-content" element={<CustomContentHelp />} />
-          <Route path="/help/increase-sales" element={<SalesHelp />} />
-          <Route path="/help/payment-methods" element={<PaymentMethodsHelp />} />
-          <Route path="/help/subscription-management" element={<SubscriptionManagementHelp />} />
-          <Route path="/help/withdraw-earnings" element={<WithdrawEarningsHelp />} />
-          <Route path="/help/tax-information" element={<TaxInformationHelp />} />
-          <Route path="/help/creating-account" element={<CreateAccountHelp />} />
-          <Route path="/help/verify-profile" element={<VerifyProfileHelp />} />
-          <Route path="/help/setting-up-seller" element={<SellerSetupHelp />} />
-          <Route path="/help/subscription-plans" element={<SubscriptionPlansHelp />} />
-          <Route path="/report" element={<ReportAbuse />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/content/:id" element={<ContentDetail />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/sellers" element={<Sellers />} />
+            <Route path="/seller/:id" element={<SellerProfile />} />
+            
+            {/* Protected routes */}
+            <Route path="/buyer-dashboard" element={
+              <ProtectedRoute>
+                <BuyerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/seller-dashboard" element={
+              <ProtectedRoute>
+                <SellerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/purchase/:id" element={
+              <ProtectedRoute>
+                <PurchaseDetail />
+              </ProtectedRoute>
+            } />
+            
+            {/* Public routes */}
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/content-policy" element={<ContentPolicy />} />
+            <Route path="/dmca" element={<DMCA />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/help/buyers" element={<BuyersHelp />} />
+            <Route path="/help/sellers" element={<SellersHelp />} />
+            <Route path="/help/privacy-security" element={<PrivacySecurityHelp />} />
+            <Route path="/help/troubleshooting" element={<TroubleshootingHelp />} />
+            <Route path="/cookies" element={<Cookies />} />
+            {/* Help content routes */}
+            <Route path="/help/browsing-content" element={<BrowsingContentHelp />} />
+            <Route path="/help/uploading-content" element={<UploadingContentHelp />} />
+            <Route path="/help/two-factor" element={<TwoFactorHelp />} />
+            <Route path="/help/login-problems" element={<LoginProblemsHelp />} />
+            {/* New help content routes */}
+            <Route path="/help/purchasing" element={<PurchasingHelp />} />
+            <Route path="/help/messaging-sellers" element={<MessagingSellersHelp />} />
+            <Route path="/help/buyer-protection" element={<BuyerProtectionHelp />} />
+            <Route path="/help/seller-dashboard" element={<SellerDashboardHelp />} />
+            <Route path="/help/pricing-content" element={<PricingContentHelp />} />
+            <Route path="/help/analytics" element={<AnalyticsHelp />} />
+            <Route path="/help/promotions" element={<PromotionsHelp />} />
+            <Route path="/help/privacy-features" element={<PrivacyFeaturesHelp />} />
+            <Route path="/help/security-tips" element={<SecurityTipsHelp />} />
+            <Route path="/help/content-protection" element={<ContentProtectionHelp />} />
+            <Route path="/help/payment-issues" element={<PaymentIssuesHelp />} />
+            <Route path="/help/upload-troubleshooting" element={<UploadTroubleshootingHelp />} />
+            <Route path="/help/account-recovery" element={<AccountRecoveryHelp />} />
+            <Route path="/help/content-guidelines" element={<ContentGuidelinesHelp />} />
+            <Route path="/help/custom-content" element={<CustomContentHelp />} />
+            <Route path="/help/increase-sales" element={<SalesHelp />} />
+            <Route path="/help/payment-methods" element={<PaymentMethodsHelp />} />
+            <Route path="/help/subscription-management" element={<SubscriptionManagementHelp />} />
+            <Route path="/help/withdraw-earnings" element={<WithdrawEarningsHelp />} />
+            <Route path="/help/tax-information" element={<TaxInformationHelp />} />
+            <Route path="/help/creating-account" element={<CreateAccountHelp />} />
+            <Route path="/help/verify-profile" element={<VerifyProfileHelp />} />
+            <Route path="/help/setting-up-seller" element={<SellerSetupHelp />} />
+            <Route path="/help/subscription-plans" element={<SubscriptionPlansHelp />} />
+            <Route path="/report" element={<ReportAbuse />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -2,12 +2,22 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, User, Menu, X } from "lucide-react";
+import { Search, User, Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   // Check if user is on the seller dashboard page
   const isOnSellerDashboard = location.pathname === "/seller-dashboard";
@@ -77,16 +87,44 @@ const Navigation = () => {
               />
             </div>
             
-            <Link to="/login">
-              <Button variant="outline" className="border-gold hover:bg-gold hover:text-white">
-                Login
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button className="bg-gold hover:bg-gold-dark text-white">
-                Join Now
-              </Button>
-            </Link>
+            {/* Show these buttons only when not logged in */}
+            {!user ? (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="border-gold hover:bg-gold hover:text-white">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button className="bg-gold hover:bg-gold-dark text-white">
+                    Join Now
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="rounded-full border-gold">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/buyer-dashboard" className="w-full cursor-pointer">Buyer Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/seller-dashboard" className="w-full cursor-pointer">Seller Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="text-red-600 cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -139,18 +177,45 @@ const Navigation = () => {
                 />
               </div>
               
-              <div className="flex flex-col space-y-2 pt-2">
-                <Link to="/login">
-                  <Button variant="outline" className="w-full border-gold hover:bg-gold hover:text-white">
-                    Login
+              {/* Show these buttons only when not logged in */}
+              {!user ? (
+                <div className="flex flex-col space-y-2 pt-2">
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" className="w-full border-gold hover:bg-gold hover:text-white">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                    <Button className="w-full bg-gold hover:bg-gold-dark text-white">
+                      Join Now
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-2 pt-2">
+                  <Link to="/buyer-dashboard" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" className="w-full text-left justify-start">
+                      Buyer Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/seller-dashboard" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" className="w-full text-left justify-start">
+                      Seller Dashboard
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-left justify-start text-red-600" 
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      signOut();
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                   </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="w-full bg-gold hover:bg-gold-dark text-white">
-                    Join Now
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}
