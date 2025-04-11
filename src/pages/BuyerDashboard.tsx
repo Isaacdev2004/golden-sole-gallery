@@ -8,23 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Clock, User } from "lucide-react";
+import { Heart, ShoppingCart, Clock, User, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -39,14 +31,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
-  const [showAllPurchases, setShowAllPurchases] = useState(false);
-  const [showAllFavorites, setShowAllFavorites] = useState(false);
-  const [selectedCreator, setSelectedCreator] = useState(null);
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
+  const [selectedCreator, setSelectedCreator] = useState<any>(null);
   const [showActivityStatus, setShowActivityStatus] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(true);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -84,28 +78,160 @@ const BuyerDashboard = () => {
     fetchUserProfile();
   }, [user, toast]);
   
-  const recentPurchases = [
-    { id: 1, name: "Summer Collection", seller: "GoldenSteps", price: "$15.00", date: "April 3, 2025", image: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
-    { id: 2, name: "Beach Day Set", seller: "ArtsyToes", price: "$12.50", date: "April 1, 2025", image: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
-    { id: 3, name: "Wellness Feet Pack", seller: "FeetFirst", price: "$18.00", date: "March 28, 2025", image: "https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?w=400&h=400&auto=format&q=80" },
-    { id: 4, name: "Fashion Week Special", seller: "SoleMates", price: "$22.50", date: "March 25, 2025", image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=400&h=400&auto=format&q=80" },
-    { id: 5, name: "Autumn Collection", seller: "GoldenSteps", price: "$15.00", date: "March 20, 2025", image: "https://images.unsplash.com/photo-1604001307862-2d953b875079?w=400&h=400&auto=format&q=80" },
-  ];
+  // Fetch recent purchases
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingPurchases(true);
+        const { data, error } = await supabase
+          .from('purchases')
+          .select(`
+            id,
+            price,
+            purchase_date,
+            status,
+            content:content_id (
+              title,
+              thumbnail_url,
+              type
+            ),
+            seller:seller_id (
+              id,
+              full_name
+            )
+          `)
+          .eq('buyer_id', user.id)
+          .eq('status', 'completed')
+          .order('purchase_date', { ascending: false })
+          .limit(5);
+        
+        if (error) {
+          console.error('Error fetching purchases:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load your purchases",
+            variant: "destructive",
+          });
+        } else {
+          setRecentPurchases(data || []);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoadingPurchases(false);
+      }
+    };
+    
+    fetchPurchases();
+  }, [user, toast]);
   
-  const favorites = [
-    { id: 1, name: "SoleFocus", displayName: "Emma Johnson", rating: 4.9, content: { photos: 98, videos: 34 }, image: "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=400&h=400&auto=format&q=80" },
-    { id: 2, name: "WalkThis_Way", displayName: "Alexander Smith", rating: 4.7, content: { photos: 104, videos: 27 }, image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&auto=format&q=80" },
-    { id: 3, name: "FootPrintArt", displayName: "Olivia Garcia", rating: 4.8, content: { photos: 85, videos: 42 }, image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80" },
-    { id: 4, name: "StepMaster", displayName: "Daniel Brown", rating: 4.6, content: { photos: 76, videos: 31 }, image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&auto=format&q=80" },
-    { id: 5, name: "SoleStyle", displayName: "Sophia Martinez", rating: 4.9, content: { photos: 112, videos: 45 }, image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&auto=format&q=80" },
-  ];
+  // Fetch favorites (followed sellers)
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingFavorites(true);
+        const { data, error } = await supabase
+          .from('followers')
+          .select(`
+            id,
+            following:following_id (
+              id, 
+              full_name,
+              account_type
+            )
+          `)
+          .eq('follower_id', user.id);
+        
+        if (error) {
+          console.error('Error fetching favorites:', error);
+        } else if (data && data.length > 0) {
+          // Get the seller profiles with more details
+          const sellerIds = data.map(item => item.following.id);
+          
+          const { data: sellerProfiles, error: sellerError } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', sellerIds)
+            .eq('account_type', 'seller');
+          
+          if (sellerError) {
+            console.error('Error fetching seller profiles:', sellerError);
+          } else {
+            // Get content counts for each seller
+            const enhancedFavorites = await Promise.all(
+              sellerProfiles.map(async (seller) => {
+                const { count: photoCount } = await supabase
+                  .from('content')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('seller_id', seller.id)
+                  .eq('type', 'photo');
+                
+                const { count: videoCount } = await supabase
+                  .from('content')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('seller_id', seller.id)
+                  .eq('type', 'video');
+                
+                // Get average rating
+                const { data: reviews } = await supabase
+                  .from('reviews')
+                  .select('rating')
+                  .eq('seller_id', seller.id);
+                
+                let rating = 0;
+                if (reviews && reviews.length > 0) {
+                  rating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+                }
+                
+                return {
+                  id: seller.id,
+                  name: seller.full_name.split(' ')[1] || seller.full_name, // Using last name as username if possible
+                  displayName: seller.full_name,
+                  verified: false, // Placeholder, we'd need to add this to the profiles table
+                  rating: rating || 4.5, // Default if no reviews
+                  reviews: reviews?.length || 0,
+                  content: {
+                    photos: photoCount || 0,
+                    videos: videoCount || 0
+                  },
+                  image: null // We'd need to add profile images
+                };
+              })
+            );
+            
+            setFavorites(enhancedFavorites);
+          }
+        } else {
+          setFavorites([]);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoadingFavorites(false);
+      }
+    };
+    
+    fetchFavorites();
+  }, [user, toast]);
   
-  // Use the actual user profile data (if available) or fallback to default values
-  const userData = {
-    name: userProfile?.full_name || "Loading...",
-    email: user?.email || "Loading...",
-    memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
-    credits: 50,
+  // Format date helper function
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
   };
 
   const handleViewPurchase = (purchaseId) => {
@@ -125,11 +251,49 @@ const BuyerDashboard = () => {
     }
   };
 
-  const handleToggleFollow = (sellerId) => {
-    toast({
-      title: "Follow status updated",
-      description: "Your follow preferences have been saved.",
-    });
+  const handleToggleFollow = async (sellerId) => {
+    if (!user) return;
+    
+    try {
+      // Check if already following
+      const { data } = await supabase
+        .from('followers')
+        .select('*')
+        .eq('follower_id', user.id)
+        .eq('following_id', sellerId)
+        .single();
+      
+      if (data) {
+        // Unfollow
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', sellerId);
+        
+        // Update local state
+        setFavorites(favorites.filter(f => f.id !== sellerId));
+      } else {
+        // Follow
+        await supabase
+          .from('followers')
+          .insert([
+            { follower_id: user.id, following_id: sellerId }
+          ]);
+        
+        toast({
+          title: "Success",
+          description: "You are now following this seller",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling follow status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
+    }
   };
 
   const closeCreatorDetail = () => {
@@ -157,6 +321,43 @@ const BuyerDashboard = () => {
     });
   };
 
+  // Use the actual user profile data (if available) or fallback to default values
+  const userData = {
+    name: userProfile?.full_name || "Loading...",
+    email: user?.email || "Loading...",
+    memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
+    credits: 50, // This would need to be added to the profiles table
+  };
+
+  const renderPlaceholder = (type: "purchases" | "favorites") => (
+    <div className="text-center py-6 text-gray-500">
+      {type === "purchases" ? (
+        <>
+          <ShoppingCart className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+          <p>No purchases yet</p>
+          <Button variant="link" className="text-gold mt-2" onClick={() => navigate("/browse")}>
+            Browse Content
+          </Button>
+        </>
+      ) : (
+        <>
+          <Heart className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+          <p>No favorites yet</p>
+          <Button variant="link" className="text-gold mt-2" onClick={() => navigate("/sellers")}>
+            Browse Sellers
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
+  const renderLoadingState = () => (
+    <div className="flex items-center justify-center py-8">
+      <Loader2 className="h-8 w-8 animate-spin text-gold" />
+      <span className="ml-2">Loading...</span>
+    </div>
+  );
+
   return (
     <>
       <Navigation />
@@ -169,30 +370,36 @@ const BuyerDashboard = () => {
               <CardTitle>Your Profile</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center mb-4">
-                <Avatar className="h-24 w-24 mb-4">
-                  <AvatarFallback className="bg-gold text-white text-xl">
-                    {isLoadingProfile ? "..." : (userData.name.charAt(0) || "?")}
-                  </AvatarFallback>
-                </Avatar>
-                <h3 className="text-xl font-semibold">{isLoadingProfile ? "Loading..." : userData.name}</h3>
-                <p className="text-gray-500">{isLoadingProfile ? "Loading..." : userData.email}</p>
-                <Badge className="mt-2 bg-gold">Buyer</Badge>
-              </div>
-              
-              <div className="space-y-3 mt-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Member since:</span>
-                  <span className="font-medium">{isLoadingProfile ? "Loading..." : userData.memberSince}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Credits:</span>
-                  <span className="font-medium text-gold">{userData.credits}</span>
-                </div>
-                <Button className="w-full mt-4 bg-gold hover:bg-gold-dark">
-                  Add Credits
-                </Button>
-              </div>
+              {isLoadingProfile ? (
+                renderLoadingState()
+              ) : (
+                <>
+                  <div className="flex flex-col items-center mb-4">
+                    <Avatar className="h-24 w-24 mb-4">
+                      <AvatarFallback className="bg-gold text-white text-xl">
+                        {userData.name.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-semibold">{userData.name}</h3>
+                    <p className="text-gray-500">{userData.email}</p>
+                    <Badge className="mt-2 bg-gold">Buyer</Badge>
+                  </div>
+                  
+                  <div className="space-y-3 mt-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Member since:</span>
+                      <span className="font-medium">{userData.memberSince}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Credits:</span>
+                      <span className="font-medium text-gold">{userData.credits}</span>
+                    </div>
+                    <Button className="w-full mt-4 bg-gold hover:bg-gold-dark">
+                      Add Credits
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
           
@@ -219,53 +426,67 @@ const BuyerDashboard = () => {
                           <DialogHeader>
                             <DialogTitle>All Purchases</DialogTitle>
                           </DialogHeader>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Image</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Seller</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Action</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {recentPurchases.map((purchase) => (
-                                <TableRow key={purchase.id}>
-                                  <TableCell>
-                                    <div className="h-12 w-12 rounded-md overflow-hidden">
-                                      <img
-                                        src={purchase.image}
-                                        alt={purchase.name}
-                                        className="h-full w-full object-cover"
-                                        loading="lazy"
-                                      />
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{purchase.name}</TableCell>
-                                  <TableCell>{purchase.seller}</TableCell>
-                                  <TableCell>{purchase.date}</TableCell>
-                                  <TableCell>{purchase.price}</TableCell>
-                                  <TableCell>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleViewPurchase(purchase.id)}
-                                    >
-                                      View
-                                    </Button>
-                                  </TableCell>
+                          {loadingPurchases ? (
+                            renderLoadingState()
+                          ) : recentPurchases.length > 0 ? (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Image</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Seller</TableHead>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Price</TableHead>
+                                  <TableHead>Action</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {recentPurchases.map((purchase) => (
+                                  <TableRow key={purchase.id}>
+                                    <TableCell>
+                                      <div className="h-12 w-12 rounded-md overflow-hidden bg-gray-200">
+                                        {purchase.content.thumbnail_url ? (
+                                          <img
+                                            src={purchase.content.thumbnail_url}
+                                            alt={purchase.content.title}
+                                            className="h-full w-full object-cover"
+                                            loading="lazy"
+                                          />
+                                        ) : (
+                                          <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                            {purchase.content.type === 'photo' ? 'Image' : 'Video'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{purchase.content.title}</TableCell>
+                                    <TableCell>{purchase.seller.full_name}</TableCell>
+                                    <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
+                                    <TableCell>${purchase.price}</TableCell>
+                                    <TableCell>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleViewPurchase(purchase.id)}
+                                      >
+                                        View
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          ) : (
+                            renderPlaceholder("purchases")
+                          )}
                         </DialogContent>
                       </Dialog>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {recentPurchases.slice(0, 2).length > 0 ? (
+                    {loadingPurchases ? (
+                      renderLoadingState()
+                    ) : recentPurchases.length > 0 ? (
                       <div className="space-y-4">
                         {recentPurchases.slice(0, 2).map((purchase) => (
                           <div 
@@ -273,34 +494,34 @@ const BuyerDashboard = () => {
                             className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                             onClick={() => handleViewPurchase(purchase.id)}
                           >
-                            <div className="h-16 w-16 rounded-md overflow-hidden">
-                              <img 
-                                src={purchase.image} 
-                                alt={purchase.name} 
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
+                            <div className="h-16 w-16 rounded-md overflow-hidden bg-gray-200">
+                              {purchase.content.thumbnail_url ? (
+                                <img 
+                                  src={purchase.content.thumbnail_url} 
+                                  alt={purchase.content.title} 
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                  {purchase.content.type === 'photo' ? 'Image' : 'Video'}
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold">{purchase.name}</h4>
-                              <p className="text-sm text-gray-500">by {purchase.seller}</p>
+                              <h4 className="font-semibold">{purchase.content.title}</h4>
+                              <p className="text-sm text-gray-500">by {purchase.seller.full_name}</p>
                               <div className="flex items-center mt-1">
                                 <Clock className="h-3 w-3 mr-1 text-gray-400" />
-                                <span className="text-xs text-gray-500">{purchase.date}</span>
+                                <span className="text-xs text-gray-500">{formatDate(purchase.purchase_date)}</span>
                               </div>
                             </div>
-                            <div className="font-medium text-gold">{purchase.price}</div>
+                            <div className="font-medium text-gold">${purchase.price}</div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <ShoppingCart className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-                        <p>No purchases yet</p>
-                        <Button variant="link" className="text-gold mt-2">
-                          Browse Content
-                        </Button>
-                      </div>
+                      renderPlaceholder("purchases")
                     )}
                   </CardContent>
                 </Card>
@@ -321,66 +542,72 @@ const BuyerDashboard = () => {
                           <DialogHeader>
                             <DialogTitle>All Favorite Creators</DialogTitle>
                           </DialogHeader>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Profile</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Username</TableHead>
-                                <TableHead>Content</TableHead>
-                                <TableHead>Rating</TableHead>
-                                <TableHead>Action</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {favorites.map((seller) => (
-                                <TableRow key={seller.id}>
-                                  <TableCell>
-                                    <Avatar className="h-10 w-10 border border-gold">
-                                      <AvatarImage src={seller.image} />
-                                      <AvatarFallback className="bg-gold text-white">
-                                        {seller.displayName.charAt(0)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  </TableCell>
-                                  <TableCell>{seller.displayName}</TableCell>
-                                  <TableCell>@{seller.name}</TableCell>
-                                  <TableCell>{seller.content.photos} Photos • {seller.content.videos} Videos</TableCell>
-                                  <TableCell>{seller.rating} ★</TableCell>
-                                  <TableCell>
-                                    <div className="flex gap-2">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => handleViewSellerProfile(seller.id)}
-                                      >
-                                        View
-                                      </Button>
-                                      <Button 
-                                        size="sm"
-                                        variant="outline" 
-                                        className="border-gold text-gold hover:bg-gold/10"
-                                        onClick={() => handleToggleFollow(seller.id)}
-                                      >
-                                        Following
-                                      </Button>
-                                    </div>
-                                  </TableCell>
+                          {loadingFavorites ? (
+                            renderLoadingState()
+                          ) : favorites.length > 0 ? (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Profile</TableHead>
+                                  <TableHead>Name</TableHead>
+                                  <TableHead>Username</TableHead>
+                                  <TableHead>Content</TableHead>
+                                  <TableHead>Rating</TableHead>
+                                  <TableHead>Action</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {favorites.map((seller) => (
+                                  <TableRow key={seller.id}>
+                                    <TableCell>
+                                      <Avatar className="h-10 w-10 border border-gold">
+                                        <AvatarFallback className="bg-gold text-white">
+                                          {seller.displayName.charAt(0)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    </TableCell>
+                                    <TableCell>{seller.displayName}</TableCell>
+                                    <TableCell>@{seller.name}</TableCell>
+                                    <TableCell>{seller.content.photos} Photos • {seller.content.videos} Videos</TableCell>
+                                    <TableCell>{seller.rating.toFixed(1)} ★</TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-2">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleViewSellerProfile(seller.id)}
+                                        >
+                                          View
+                                        </Button>
+                                        <Button 
+                                          size="sm"
+                                          variant="outline" 
+                                          className="border-gold text-gold hover:bg-gold/10"
+                                          onClick={() => handleToggleFollow(seller.id)}
+                                        >
+                                          Following
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          ) : (
+                            renderPlaceholder("favorites")
+                          )}
                         </DialogContent>
                       </Dialog>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {favorites.slice(0, 2).length > 0 ? (
+                    {loadingFavorites ? (
+                      renderLoadingState()
+                    ) : favorites.length > 0 ? (
                       <div className="space-y-4">
                         {favorites.slice(0, 2).map((seller) => (
                           <div key={seller.id} className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                             <Avatar className="h-14 w-14 border-2 border-gold">
-                              <AvatarImage src={seller.image} />
                               <AvatarFallback className="bg-gold text-white">
                                 {seller.displayName.charAt(0)}
                               </AvatarFallback>
@@ -405,13 +632,7 @@ const BuyerDashboard = () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <Heart className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-                        <p>No favorites yet</p>
-                        <Button variant="link" className="text-gold mt-2">
-                          Browse Sellers
-                        </Button>
-                      </div>
+                      renderPlaceholder("favorites")
                     )}
                   </CardContent>
                 </Card>
@@ -489,7 +710,6 @@ const BuyerDashboard = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16 border-2 border-gold">
-                  <AvatarImage src={selectedCreator.image} />
                   <AvatarFallback className="bg-gold text-white text-lg">
                     {selectedCreator.displayName.charAt(0)}
                   </AvatarFallback>
@@ -498,7 +718,10 @@ const BuyerDashboard = () => {
                   <h3 className="text-lg font-semibold">{selectedCreator.displayName}</h3>
                   <p className="text-sm text-gray-500">@{selectedCreator.name}</p>
                   <div className="flex items-center mt-1">
-                    <span className="text-sm text-amber-500 font-medium">{selectedCreator.rating} ★</span>
+                    <span className="text-sm text-amber-500 font-medium">{selectedCreator.rating.toFixed(1)} ★</span>
+                    {selectedCreator.reviews > 0 && (
+                      <span className="text-xs text-gray-500 ml-1">({selectedCreator.reviews} reviews)</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -514,19 +737,6 @@ const BuyerDashboard = () => {
                 </div>
               </div>
               
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2 text-sm">Featured Content</h4>
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="aspect-square bg-gray-200 rounded-md overflow-hidden">
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                        Preview {item}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
               <div className="pt-2 flex justify-end gap-2">
                 <Button 
                   variant="outline" 
@@ -535,7 +745,13 @@ const BuyerDashboard = () => {
                 >
                   Following
                 </Button>
-                <Button className="bg-gold hover:bg-gold-dark">
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={() => {
+                    setShowCreatorDetail(false);
+                    navigate(`/seller/${selectedCreator.id}`);
+                  }}
+                >
                   Browse Content
                 </Button>
               </div>
