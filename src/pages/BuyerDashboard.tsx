@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Clock, User, Loader2 } from "lucide-react";
+import { Heart, ShoppingCart, Clock, User, Loader2, Upload, Camera } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -29,6 +28,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
@@ -42,6 +43,11 @@ const BuyerDashboard = () => {
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -354,12 +360,115 @@ const BuyerDashboard = () => {
     });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(selectedFile.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a valid image file (JPEG, PNG, GIF, WEBP)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (selectedFile.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setProfileImageFile(selectedFile);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setPreviewImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(selectedFile);
+  };
+  
+  const uploadProfileImage = async () => {
+    if (!profileImageFile || !user) return;
+    
+    try {
+      setIsUploading(true);
+      
+      // Generate a unique file name to avoid collisions
+      const fileExt = profileImageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `profile_images/${user.id}/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('content_uploads')
+        .upload(filePath, profileImageFile);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('content_uploads')
+        .getPublicUrl(filePath);
+      
+      // Update the user's profile with the new image URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          profile_image: publicUrl
+        })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // Update local state
+      setUserProfile({
+        ...userProfile,
+        profile_image: publicUrl
+      });
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile image has been updated successfully",
+      });
+      
+      setIsProfileDialogOpen(false);
+      setPreviewImage(null);
+      setProfileImageFile(null);
+      
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
   // Use the actual user profile data (if available) or fallback to default values
   const userData = {
     name: userProfile?.full_name || "Loading...",
     email: user?.email || "Loading...",
     memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
     credits: 50, // This would need to be added to the profiles table
+    profileImage: userProfile?.profile_image || null
   };
 
   const renderPlaceholder = (type: "purchases" | "favorites") => (
@@ -404,15 +513,35 @@ const BuyerDashboard = () => {
             </CardHeader>
             <CardContent>
               {isLoadingProfile ? (
-                renderLoadingState()
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gold" />
+                  <span className="ml-2">Loading...</span>
+                </div>
               ) : (
                 <>
                   <div className="flex flex-col items-center mb-4">
-                    <Avatar className="h-24 w-24 mb-4">
-                      <AvatarFallback className="bg-gold text-white text-xl">
-                        {userData.name.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative group">
+                      <Avatar className="h-24 w-24 mb-4 cursor-pointer" onClick={() => setIsProfileDialogOpen(true)}>
+                        {userData.profileImage ? (
+                          <AvatarImage src={userData.profileImage} alt={userData.name} />
+                        ) : (
+                          <AvatarFallback className="bg-gold text-white text-xl">
+                            {userData.name.charAt(0) || "?"}
+                          </AvatarFallback>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 rounded-full transition-opacity">
+                          <Camera className="h-8 w-8 text-white" />
+                        </div>
+                      </Avatar>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="absolute bottom-2 right-0 rounded-full h-8 w-8 p-0"
+                        onClick={() => setIsProfileDialogOpen(true)}
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <h3 className="text-xl font-semibold">{userData.name}</h3>
                     <p className="text-gray-500">{userData.email}</p>
                     <Badge className="mt-2 bg-gold">Buyer</Badge>
@@ -773,29 +902,4 @@ const BuyerDashboard = () => {
               <div className="pt-2 flex justify-end gap-2">
                 <Button 
                   variant="outline" 
-                  className="border-gold text-gold hover:bg-gold/10"
-                  onClick={() => handleToggleFollow(selectedCreator.id)}
-                >
-                  Following
-                </Button>
-                <Button 
-                  className="bg-gold hover:bg-gold-dark"
-                  onClick={() => {
-                    setShowCreatorDetail(false);
-                    navigate(`/seller/${selectedCreator.id}`);
-                  }}
-                >
-                  Browse Content
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      <Footer />
-    </>
-  );
-};
-
-export default BuyerDashboard;
+                  className="border-gold text-gold hover:bg-gold/
