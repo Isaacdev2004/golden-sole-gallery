@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, User } from "lucide-react";
+import { Upload, User, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { v4 as uuidv4 } from "uuid";
 
 interface ProfileEditDialogProps {
   open: boolean;
@@ -39,13 +42,67 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
   onSave,
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [name, setName] = useState(profileData.name);
   const [username, setUsername] = useState(profileData.username);
   const [bio, setBio] = useState(profileData.bio || "");
   const [profileImage, setProfileImage] = useState(profileData.profileImage);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Reset form when dialog opens
+    if (open) {
+      setName(profileData.name);
+      setUsername(profileData.username);
+      setBio(profileData.bio || "");
+      setProfileImage(profileData.profileImage);
+      setPreviewImage(null);
+      setFile(null);
+    }
+  }, [open, profileData]);
+  
+  const uploadProfileImage = async () => {
+    if (!file || !user) return profileImage;
+    
+    try {
+      setUploading(true);
+      
+      // Generate a unique file name to avoid collisions
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `profile_images/${user.id}/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('content_uploads')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('content_uploads')
+        .getPublicUrl(filePath);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile image. Please try again.",
+        variant: "destructive",
+      });
+      return profileImage; // Return existing image if upload fails
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -58,10 +115,17 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
       return;
     }
     
+    // Upload image if a new one was selected
+    let finalImageUrl = profileImage;
+    if (file) {
+      finalImageUrl = await uploadProfileImage();
+    }
+    
+    // Save profile data
     onSave({
       name,
       username,
-      profileImage: previewImage || profileImage,
+      profileImage: finalImageUrl,
       bio,
     });
     
@@ -72,16 +136,41 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
     
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(selectedFile.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a valid image file (JPEG, PNG, GIF, WEBP)",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (selectedFile.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setFile(selectedFile);
+    
+    // Create preview
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setPreviewImage(reader.result);
       }
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(selectedFile);
   };
   
   return (
@@ -107,13 +196,18 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
                 accept="image/*"
                 onChange={handleImageChange}
                 className="hidden"
+                disabled={uploading}
               />
               <Label
                 htmlFor="profileImage"
-                className="flex items-center gap-2 text-sm cursor-pointer px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200"
+                className={`flex items-center gap-2 text-sm cursor-pointer px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Upload size={16} />
-                Change Photo
+                {uploading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Upload size={16} />
+                )}
+                {uploading ? "Uploading..." : "Change Photo"}
               </Label>
             </div>
           </div>
@@ -127,6 +221,7 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="flex-1"
+                disabled={uploading}
               />
             </div>
           </div>
@@ -140,6 +235,7 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="flex-1"
+                disabled={uploading}
               />
             </div>
           </div>
@@ -153,6 +249,7 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
               placeholder="Tell us about yourself"
               className="mt-1"
               rows={4}
+              disabled={uploading}
             />
           </div>
           
@@ -161,14 +258,23 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
               variant="outline"
               type="button"
               onClick={() => onOpenChange(false)}
+              disabled={uploading}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               className="bg-gold hover:bg-gold-dark"
+              disabled={uploading}
             >
-              Save Changes
+              {uploading ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </DialogFooter>
         </form>

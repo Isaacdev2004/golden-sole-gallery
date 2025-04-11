@@ -1,5 +1,6 @@
 
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,35 +8,238 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ChevronLeft, MessageSquare, Heart, ShoppingCart, Share2, Shield, Star } from "lucide-react";
+import { ChevronLeft, MessageSquare, Heart, ShoppingCart, Share2, Shield, Star, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const SellerProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const [sellerData, setSellerData] = useState<any>(null);
 
-  // Mock seller data - in a real app, this would come from an API
-  const sellerData = {
-    id,
-    username: "GoldenSteps",
-    displayName: "Olivia Grace",
-    verificationBadge: true,
-    rating: 4.8,
-    reviewCount: 156,
-    joinDate: "March 2023",
-    subscribers: 248,
-    likes: 1.2, // in thousands
-    bio: "Hi there! I'm Olivia, a certified foot model with 5 years of experience. I specialize in high-quality artistic content focusing on arches and natural beauty. Subscribe for regular updates and exclusive content!",
-    tags: ["Model", "Size 7", "Arches", "Natural"],
-    subscriptionPrice: 14.99,
-    photoCount: 137,
-    videoCount: 42,
-    profileImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
-    featuredContent: [
-      { id: "p1", type: "photo", thumbnail: "https://images.unsplash.com/photo-1604671801908-6f0c6a092c05?w=300&h=400&auto=format&q=80" },
-      { id: "v1", type: "video", thumbnail: "https://images.unsplash.com/photo-1638272181967-78797a0a030d?w=300&h=400&auto=format&q=80" },
-      { id: "p2", type: "photo", thumbnail: "https://images.unsplash.com/photo-1600054800747-be294a6a0d26?w=300&h=400&auto=format&q=80" },
-      { id: "p3", type: "photo", thumbnail: "https://images.unsplash.com/photo-1618897996318-5a901fa6ca71?w=300&h=400&auto=format&q=80" },
-    ]
+  useEffect(() => {
+    const fetchSellerData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch the seller profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
+          .eq('account_type', 'seller')
+          .single();
+        
+        if (profileError || !profile) {
+          toast({
+            title: "Seller not found",
+            description: "Could not find the requested seller profile",
+            variant: "destructive",
+          });
+          navigate('/browse');
+          return;
+        }
+        
+        // Check if the current user is following this seller
+        if (user) {
+          const { data: followData } = await supabase
+            .from('followers')
+            .select('*')
+            .eq('follower_id', user.id)
+            .eq('following_id', id)
+            .single();
+          
+          setFollowing(!!followData);
+        }
+        
+        // Get content counts
+        const { count: photoCount } = await supabase
+          .from('content')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', id)
+          .eq('type', 'photo');
+        
+        const { count: videoCount } = await supabase
+          .from('content')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', id)
+          .eq('type', 'video');
+        
+        // Get follower count
+        const { count: subscriberCount } = await supabase
+          .from('followers')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', id);
+        
+        // Get rating
+        const { data: reviews } = await supabase
+          .from('reviews')
+          .select('rating')
+          .eq('seller_id', id);
+        
+        let rating = 0;
+        let reviewCount = 0;
+        
+        if (reviews && reviews.length > 0) {
+          rating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+          reviewCount = reviews.length;
+        }
+        
+        // Get likes count
+        const { count: likesCount } = await supabase
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .in('content_id', 
+            supabase
+              .from('content')
+              .select('id')
+              .eq('seller_id', id)
+          );
+        
+        // Fetch featured content
+        const { data: featuredContent } = await supabase
+          .from('content')
+          .select('*')
+          .eq('seller_id', id)
+          .order('created_at', { ascending: false })
+          .limit(4);
+        
+        // Build seller data object
+        setSellerData({
+          id,
+          username: profile.username || profile.full_name?.split(' ')[0]?.toLowerCase() || "seller",
+          displayName: profile.full_name || "Seller",
+          verificationBadge: false, // This would need to be added to the profile table
+          rating: rating || 4.8,
+          reviewCount: reviewCount || 0,
+          joinDate: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          subscribers: subscriberCount || 0,
+          likes: (likesCount || 0) / 1000, // in thousands
+          bio: profile.bio || "No bio available",
+          tags: ["Model", "Foot content"], // This would need to be added to the database
+          subscriptionPrice: 14.99, // This would need to be added to the database
+          photoCount: photoCount || 0,
+          videoCount: videoCount || 0,
+          profileImage: profile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
+          featuredContent: featuredContent?.map(item => ({
+            id: item.id,
+            type: item.type,
+            thumbnail: item.thumbnail_url || "https://images.unsplash.com/photo-1604671801908-6f0c6a092c05?w=300&h=400&auto=format&q=80"
+          })) || []
+        });
+        
+      } catch (error) {
+        console.error("Error fetching seller data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load seller profile",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSellerData();
+  }, [id, user, navigate, toast]);
+  
+  const handleToggleFollow = async () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      toast({
+        title: "Authentication required",
+        description: "Please log in to follow sellers",
+      });
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      if (following) {
+        // Unfollow
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', id);
+        
+        setFollowing(false);
+        toast({
+          title: "Unfollowed",
+          description: `You are no longer following ${sellerData?.displayName}`,
+        });
+      } else {
+        // Follow
+        await supabase
+          .from('followers')
+          .insert([
+            { follower_id: user.id, following_id: id }
+          ]);
+        
+        setFollowing(true);
+        toast({
+          title: "Following",
+          description: `You are now following ${sellerData?.displayName}`,
+        });
+      }
+      
+      // Update subscriber count
+      if (sellerData) {
+        setSellerData({
+          ...sellerData,
+          subscribers: following ? sellerData.subscribers - 1 : sellerData.subscribers + 1
+        });
+      }
+    } catch (error) {
+      console.error("Error updating follow status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <>
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gold" />
+            <p className="text-gray-500">Loading seller profile...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (!sellerData) {
+    return (
+      <>
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold mb-2">Seller Not Found</h2>
+            <p className="text-gray-500 mb-6">The seller you're looking for doesn't exist or has been removed.</p>
+            <Button onClick={() => navigate('/browse')} className="bg-gold hover:bg-gold-dark">
+              Browse Sellers
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -70,7 +274,7 @@ const SellerProfile = () => {
               
               <div className="flex items-center justify-center mb-4">
                 <Star className="h-4 w-4 text-gold mr-1" />
-                <span className="font-medium">{sellerData.rating}</span>
+                <span className="font-medium">{sellerData.rating.toFixed(1)}</span>
                 <span className="text-gray-500 ml-1">({sellerData.reviewCount} reviews)</span>
               </div>
               
@@ -112,9 +316,13 @@ const SellerProfile = () => {
                 Send Message
               </Button>
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="border-gray-200 text-gray-700">
-                  <Heart className="mr-2 h-5 w-5" />
-                  Like
+                <Button 
+                  variant="outline" 
+                  className={`${following ? 'bg-gold/10 border-gold text-gold' : 'border-gray-200 text-gray-700'}`}
+                  onClick={handleToggleFollow}
+                >
+                  <Heart className={`mr-2 h-5 w-5 ${following ? 'fill-gold text-gold' : ''}`} />
+                  {following ? 'Following' : 'Follow'}
                 </Button>
                 <Button variant="outline" className="border-gray-200 text-gray-700">
                   <Share2 className="mr-2 h-5 w-5" />

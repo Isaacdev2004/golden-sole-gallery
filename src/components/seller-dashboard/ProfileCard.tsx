@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Edit } from "lucide-react";
 import ProfileEditDialog from "./ProfileEditDialog";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileCardProps {
   name: string;
@@ -19,6 +22,7 @@ interface ProfileCardProps {
     photos: number;
     videos: number;
   };
+  bio?: string;
   onProfileUpdate?: (updatedProfile: {
     name: string;
     username: string;
@@ -36,20 +40,58 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   rating,
   reviews,
   content,
+  bio = "",
   onProfileUpdate,
 }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  const handleProfileUpdate = (updatedProfile: {
+  const handleProfileUpdate = async (updatedProfile: {
     name: string;
     username: string;
     profileImage: string;
     bio: string;
   }) => {
-    if (onProfileUpdate) {
-      onProfileUpdate(updatedProfile);
+    if (!user) return;
+    
+    try {
+      // Update profile in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updatedProfile.name,
+          // Add additional fields when database schema allows
+          // username: updatedProfile.username,
+          // profile_image: updatedProfile.profileImage,
+          // bio: updatedProfile.bio
+        })
+        .eq('id', user.id);
+        
+      if (error) {
+        console.error("Error updating profile:", error);
+        toast({
+          title: "Update failed",
+          description: "Could not update your profile. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Call the parent component's update handler
+      if (onProfileUpdate) {
+        onProfileUpdate(updatedProfile);
+      }
+      
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error in profile update:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
-    setIsEditDialogOpen(false);
   };
   
   return (
@@ -110,7 +152,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           name,
           username,
           profileImage,
-          bio: "", // Default empty bio if not provided
+          bio,
         }}
         onSave={handleProfileUpdate}
       />
