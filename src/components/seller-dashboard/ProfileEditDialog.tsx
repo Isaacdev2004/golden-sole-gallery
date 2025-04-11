@@ -75,7 +75,7 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
       const filePath = `profile_images/${user.id}/${fileName}`;
       
       // Upload the file to Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('content_uploads')
         .upload(filePath, file);
       

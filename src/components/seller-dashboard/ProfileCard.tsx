@@ -100,7 +100,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <CardContent className="pt-6">
           <div className="flex flex-col items-center mb-4">
             <Avatar className="h-24 w-24 mb-4 border-2 border-gold">
-              <AvatarImage src={profileImage} />
+              <AvatarImage src={profileImage} alt={name} />
               <AvatarFallback className="bg-gold text-white text-xl">
                 {name.charAt(0)}
               </AvatarFallback>
