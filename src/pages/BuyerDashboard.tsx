@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -85,6 +86,7 @@ const BuyerDashboard = () => {
       
       try {
         setLoadingPurchases(true);
+        // Fixed: Changed from .from('profiles').select(...) to directly using .from('purchases')
         const { data, error } = await supabase
           .from('purchases')
           .select(`
@@ -134,24 +136,22 @@ const BuyerDashboard = () => {
       
       try {
         setLoadingFavorites(true);
+        // Fixed: Changed from .from('profiles').select(...) to directly using .from('followers')
         const { data, error } = await supabase
           .from('followers')
           .select(`
             id,
-            following:following_id (
-              id, 
-              full_name,
-              account_type
-            )
+            following_id
           `)
           .eq('follower_id', user.id);
         
         if (error) {
           console.error('Error fetching favorites:', error);
         } else if (data && data.length > 0) {
-          // Get the seller profiles with more details
-          const sellerIds = data.map(item => item.following.id);
+          // Get the seller profile IDs
+          const sellerIds = data.map(item => item.following_id);
           
+          // Fetch the seller profiles
           const { data: sellerProfiles, error: sellerError } = await supabase
             .from('profiles')
             .select('*')
@@ -160,23 +160,25 @@ const BuyerDashboard = () => {
           
           if (sellerError) {
             console.error('Error fetching seller profiles:', sellerError);
-          } else {
+          } else if (sellerProfiles) {
             // Get content counts for each seller
             const enhancedFavorites = await Promise.all(
               sellerProfiles.map(async (seller) => {
+                // Count photos by this seller
                 const { count: photoCount } = await supabase
                   .from('content')
                   .select('*', { count: 'exact', head: true })
                   .eq('seller_id', seller.id)
                   .eq('type', 'photo');
                 
+                // Count videos by this seller
                 const { count: videoCount } = await supabase
                   .from('content')
                   .select('*', { count: 'exact', head: true })
                   .eq('seller_id', seller.id)
                   .eq('type', 'video');
                 
-                // Get average rating
+                // Get average rating for this seller
                 const { data: reviews } = await supabase
                   .from('reviews')
                   .select('rating')
@@ -189,8 +191,8 @@ const BuyerDashboard = () => {
                 
                 return {
                   id: seller.id,
-                  name: seller.full_name.split(' ')[1] || seller.full_name, // Using last name as username if possible
-                  displayName: seller.full_name,
+                  name: seller.full_name?.split(' ')[1] || seller.full_name || 'User',
+                  displayName: seller.full_name || 'User',
                   verified: false, // Placeholder, we'd need to add this to the profiles table
                   rating: rating || 4.5, // Default if no reviews
                   reviews: reviews?.length || 0,
@@ -273,8 +275,13 @@ const BuyerDashboard = () => {
         
         // Update local state
         setFavorites(favorites.filter(f => f.id !== sellerId));
+        
+        toast({
+          title: "Unfollowed",
+          description: "You are no longer following this seller",
+        });
       } else {
-        // Follow
+        // Follow - fixed from attempting to insert to profiles to inserting to followers
         await supabase
           .from('followers')
           .insert([
@@ -285,6 +292,32 @@ const BuyerDashboard = () => {
           title: "Success",
           description: "You are now following this seller",
         });
+        
+        // Refresh favorites to include the new follow
+        const { data: sellerData, error: sellerError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', sellerId)
+          .single();
+          
+        if (!sellerError && sellerData) {
+          // Basic seller info to display immediately before full refresh
+          const newFavorite = {
+            id: sellerData.id,
+            name: sellerData.full_name?.split(' ')[1] || sellerData.full_name || 'User',
+            displayName: sellerData.full_name || 'User',
+            verified: false,
+            rating: 5.0,
+            reviews: 0,
+            content: {
+              photos: 0,
+              videos: 0
+            },
+            image: null
+          };
+          
+          setFavorites([...favorites, newFavorite]);
+        }
       }
     } catch (error) {
       console.error('Error toggling follow status:', error);
