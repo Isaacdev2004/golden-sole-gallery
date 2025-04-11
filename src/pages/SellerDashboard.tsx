@@ -31,6 +31,27 @@ interface SellerProfile {
   created_at: string;
 }
 
+// Update the interface for recentSales to use string IDs instead of numbers
+interface RecentSale {
+  id: string;
+  item: string;
+  buyer: string;
+  price: string;
+  date: string;
+}
+
+// Update the interface for content items to use string IDs instead of numbers
+interface ContentItem {
+  id: string;
+  type: "photo" | "video";
+  title: string;
+  likes: number;
+  sales: number;
+  price: string;
+  date: string;
+  thumbnail: string;
+}
+
 const SellerDashboard = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
@@ -74,13 +95,7 @@ const SellerDashboard = () => {
       totalContent: 0,
       views: 0,
     },
-    recentSales: [] as Array<{
-      id: number;
-      item: string;
-      buyer: string;
-      price: string;
-      date: string;
-    }>,
+    recentSales: [] as RecentSale[],
     content: {
       photos: 0,
       videos: 0,
@@ -89,23 +104,14 @@ const SellerDashboard = () => {
   });
 
   // Define the content items - make sure 'type' is explicitly "photo" or "video"
-  const [contentItems, setContentItems] = useState<Array<{
-    id: number;
-    type: "photo" | "video";
-    title: string;
-    likes: number;
-    sales: number;
-    price: string;
-    date: string;
-    thumbnail: string;
-  }>>([]);
+  const [contentItems, setContentItems] = useState<ContentItem[]>([]);
 
   // State for filters and sorting
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
   const [filterType, setFilterType] = useState<"all" | "photo" | "video">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
-  const [filteredContent, setFilteredContent] = useState(contentItems);
+  const [filteredContent, setFilteredContent] = useState<ContentItem[]>([]);
 
   const paymentMethods = [
     { 
@@ -238,20 +244,20 @@ const SellerDashboard = () => {
         
         const todayEarnings = completedEarnings
           .filter(item => new Date(item.created_at) >= new Date(today))
-          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           
         const weekEarnings = completedEarnings
           .filter(item => new Date(item.created_at) >= new Date(weekAgo))
-          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           
         const monthEarnings = completedEarnings
           .filter(item => new Date(item.created_at) >= new Date(monthAgo))
-          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         
         // Calculate balance
-        const availableBalance = completedEarnings.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        const availableBalance = completedEarnings.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         const pendingBalance = (earningsData?.filter(item => item.status === 'pending') || [])
-          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         
         // Get recent purchases
         const { data: purchasesData, error: purchasesError } = await supabase
@@ -274,7 +280,7 @@ const SellerDashboard = () => {
         }
         
         // Format recent sales
-        const recentSales = purchasesData?.map(purchase => {
+        const recentSales: RecentSale[] = purchasesData?.map(purchase => {
           // @ts-ignore - we know the join structure
           const buyerName = purchase.buyer?.profiles?.username || purchase.buyer?.profiles?.full_name || "Anonymous";
           // @ts-ignore - we know the join structure
@@ -342,9 +348,9 @@ const SellerDashboard = () => {
 
         // Fetch and set content items
         if (contentData && contentData.length > 0) {
-          const formattedContent = contentData.map((item, index) => {
+          const formattedContent: ContentItem[] = contentData.map((item, index) => {
             return {
-              id: index + 1,
+              id: item.id,
               type: item.type as "photo" | "video",
               title: `Content ${index + 1}`, // We'll update this when we fetch the full content data
               likes: 0, // Placeholder
@@ -461,18 +467,20 @@ const SellerDashboard = () => {
       });
       
       // Add the new content to the existing content items
-      const newContentItem = {
-        id: contentItems.length + 1,
-        type: fileType === "image" ? "photo" as const : "video" as const,
-        title: title,
-        likes: 0,
-        sales: 0,
-        price: `$${price}`,
-        date: new Date().toISOString().split('T')[0],
-        thumbnail: filePreview || ""
-      };
-      
-      setContentItems([newContentItem, ...contentItems]);
+      if (contentData) {
+        const newContentItem: ContentItem = {
+          id: contentData.id,
+          type: fileType === "image" ? "photo" as const : "video" as const,
+          title: title,
+          likes: 0,
+          sales: 0,
+          price: `$${price}`,
+          date: new Date().toISOString().split('T')[0],
+          thumbnail: filePreview || ""
+        };
+        
+        setContentItems([newContentItem, ...contentItems]);
+      }
       
       // Update seller stats
       setSellerData(prev => ({
@@ -499,7 +507,7 @@ const SellerDashboard = () => {
     }
   };
 
-  const handleUpdateContent = (updatedContent: any[]) => {
+  const handleUpdateContent = (updatedContent: ContentItem[]) => {
     setContentItems(updatedContent);
   };
 
