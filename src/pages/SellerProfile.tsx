@@ -1,4 +1,3 @@
-
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -95,13 +94,7 @@ const SellerProfile = () => {
         // Get likes count
         const { count: likesCount } = await supabase
           .from('likes')
-          .select('*', { count: 'exact', head: true })
-          .in('content_id', 
-            supabase
-              .from('content')
-              .select('id')
-              .eq('seller_id', id)
-          );
+          .select('*', { count: 'exact', head: true });
         
         // Fetch featured content
         const { data: featuredContent } = await supabase
@@ -116,15 +109,15 @@ const SellerProfile = () => {
           id,
           username: profile.username || profile.full_name?.split(' ')[0]?.toLowerCase() || "seller",
           displayName: profile.full_name || "Seller",
-          verificationBadge: false, // This would need to be added to the profile table
+          verificationBadge: false,
           rating: rating || 4.8,
           reviewCount: reviewCount || 0,
           joinDate: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           subscribers: subscriberCount || 0,
-          likes: (likesCount || 0) / 1000, // in thousands
+          likes: (likesCount || 0) / 1000,
           bio: profile.bio || "No bio available",
-          tags: ["Model", "Foot content"], // This would need to be added to the database
-          subscriptionPrice: 14.99, // This would need to be added to the database
+          tags: ["Model", "Foot content"],
+          subscriptionPrice: 14.99,
           photoCount: photoCount || 0,
           videoCount: videoCount || 0,
           profileImage: profile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
@@ -152,7 +145,6 @@ const SellerProfile = () => {
   
   const handleToggleFollow = async () => {
     if (!user) {
-      // Redirect to login if not authenticated
       toast({
         title: "Authentication required",
         description: "Please log in to follow sellers",
@@ -163,7 +155,6 @@ const SellerProfile = () => {
     
     try {
       if (following) {
-        // Unfollow
         await supabase
           .from('followers')
           .delete()
@@ -176,7 +167,6 @@ const SellerProfile = () => {
           description: `You are no longer following ${sellerData?.displayName}`,
         });
       } else {
-        // Follow
         await supabase
           .from('followers')
           .insert([
@@ -190,7 +180,6 @@ const SellerProfile = () => {
         });
       }
       
-      // Update subscriber count
       if (sellerData) {
         setSellerData({
           ...sellerData,
@@ -207,7 +196,6 @@ const SellerProfile = () => {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <>
@@ -251,12 +239,11 @@ const SellerProfile = () => {
         </Link>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left Column - Profile Info */}
           <div className="md:col-span-1 space-y-6">
             <div className="bg-white rounded-lg shadow p-6 text-center">
               <div className="flex justify-center mb-4">
                 <Avatar className="h-32 w-32 border-4 border-gold">
-                  <AvatarImage src={sellerData.profileImage} />
+                  <AvatarImage src={sellerData.profileImage} alt={sellerData.displayName} />
                   <AvatarFallback className="bg-gold text-white text-2xl">
                     {sellerData.displayName.charAt(0)}
                   </AvatarFallback>
@@ -332,7 +319,6 @@ const SellerProfile = () => {
             </div>
           </div>
           
-          {/* Right Column - Content Tabs */}
           <div className="md:col-span-2">
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="w-full mb-6 bg-gray-100">

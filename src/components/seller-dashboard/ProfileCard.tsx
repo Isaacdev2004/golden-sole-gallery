@@ -61,10 +61,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         .from('profiles')
         .update({
           full_name: updatedProfile.name,
-          // Add additional fields when database schema allows
-          // username: updatedProfile.username,
-          // profile_image: updatedProfile.profileImage,
-          // bio: updatedProfile.bio
+          username: updatedProfile.username,
+          profile_image: updatedProfile.profileImage,
+          bio: updatedProfile.bio
         })
         .eq('id', user.id);
         

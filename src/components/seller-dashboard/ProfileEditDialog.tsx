@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, User, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { v4 as uuidv4 } from "uuid";
 
 interface ProfileEditDialogProps {
   open: boolean;
@@ -71,7 +70,7 @@ const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
       
       // Generate a unique file name to avoid collisions
       const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `profile_images/${user.id}/${fileName}`;
       
       // Upload the file to Supabase Storage
