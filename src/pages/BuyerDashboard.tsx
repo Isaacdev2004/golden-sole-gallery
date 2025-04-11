@@ -81,7 +81,7 @@ const BuyerDashboard = () => {
             variant: "destructive",
           });
         } else {
-          setUserProfile(data);
+          setUserProfile(data as ProfileData);
         }
       } catch (error) {
         console.error('Error:', error);
