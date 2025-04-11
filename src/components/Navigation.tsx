@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, User, Menu, X, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,41 +19,41 @@ const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  // Check if user is on the seller dashboard page
-  const isOnSellerDashboard = location.pathname === "/seller-dashboard";
-
-  // Function to navigate to seller dashboard settings
-  const navigateToSettings = () => {
-    if (isOnSellerDashboard) {
-      // If already on seller dashboard, we'll update the URL with the settings parameter
-      navigate("/seller-dashboard?tab=settings", { replace: true });
-    } else {
-      // If not on seller dashboard, we'll navigate there with a settings parameter
-      navigate("/seller-dashboard?tab=settings");
+  // Fetch user profile when user is authenticated
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingProfile(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('account_type')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && data) {
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    
+    if (user) {
+      fetchUserProfile();
     }
-  };
+  }, [user]);
 
-  // Function to navigate to seller dashboard analytics
-  const navigateToAnalytics = () => {
-    if (isOnSellerDashboard) {
-      // If already on seller dashboard, we'll update the URL with the analytics parameter
-      navigate("/seller-dashboard?tab=analytics", { replace: true });
-    } else {
-      // If not on seller dashboard, we'll navigate there with an analytics parameter
-      navigate("/seller-dashboard?tab=analytics");
-    }
-  };
-
-  // Function to navigate to seller dashboard content
-  const navigateToContent = () => {
-    if (isOnSellerDashboard) {
-      // If already on seller dashboard, we'll update the URL with the content parameter
-      navigate("/seller-dashboard?tab=content", { replace: true });
-    } else {
-      // If not on seller dashboard, we'll navigate there with a content parameter
-      navigate("/seller-dashboard?tab=content");
-    }
+  // Determine dashboard path based on user account type
+  const getDashboardPath = () => {
+    if (!userProfile) return "/login";
+    return userProfile.account_type === "seller" ? "/seller-dashboard" : "/buyer-dashboard";
   };
 
   return (
@@ -112,10 +113,10 @@ const Navigation = () => {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/buyer-dashboard" className="w-full cursor-pointer">Buyer Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/seller-dashboard" className="w-full cursor-pointer">Seller Dashboard</Link>
+                    <Link to={getDashboardPath()} className="w-full cursor-pointer">
+                      {isLoadingProfile ? "Loading..." : 
+                        (userProfile?.account_type === "seller" ? "Seller Dashboard" : "Buyer Dashboard")}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="text-red-600 cursor-pointer">
@@ -193,14 +194,10 @@ const Navigation = () => {
                 </div>
               ) : (
                 <div className="flex flex-col space-y-2 pt-2">
-                  <Link to="/buyer-dashboard" onClick={() => setIsMenuOpen(false)}>
+                  <Link to={getDashboardPath()} onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" className="w-full text-left justify-start">
-                      Buyer Dashboard
-                    </Button>
-                  </Link>
-                  <Link to="/seller-dashboard" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full text-left justify-start">
-                      Seller Dashboard
+                      {isLoadingProfile ? "Loading..." : 
+                        (userProfile?.account_type === "seller" ? "Seller Dashboard" : "Buyer Dashboard")}
                     </Button>
                   </Link>
                   <Button 

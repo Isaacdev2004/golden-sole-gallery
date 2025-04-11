@@ -15,20 +15,44 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [accountType, setAccountType] = useState("buyer");
   const { toast } = useToast();
   const { signIn, user, loading } = useAuth();
+  const [accountType, setAccountType] = useState<string | null>(null);
+  const [checkingAccountType, setCheckingAccountType] = useState(false);
 
-  // If user is already logged in, redirect to appropriate dashboard
-  if (user && !loading) {
+  // If user is already logged in, fetch account type and redirect
+  if (user && !loading && !checkingAccountType && accountType) {
     return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
+  }
+
+  // If user is logged in but we don't know the account type yet, fetch it
+  if (user && !loading && !checkingAccountType && !accountType) {
+    setCheckingAccountType(true);
+    supabase
+      .from('profiles')
+      .select('account_type')
+      .eq('id', user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to fetch user profile",
+            variant: "destructive",
+          });
+          console.error("Error fetching profile:", error);
+        } else {
+          setAccountType(data.account_type);
+        }
+        setCheckingAccountType(false);
+      });
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,26 +128,12 @@ const Login = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Account Type</Label>
-                    <div className="bg-gray-50 p-3 rounded-md border">
-                      <ToggleGroup type="single" value={accountType} onValueChange={(value) => value && setAccountType(value)} className="justify-center w-full">
-                        <ToggleGroupItem value="buyer" className="flex-1 data-[state=on]:bg-gold data-[state=on]:text-white">
-                          Buyer
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="seller" className="flex-1 data-[state=on]:bg-gold data-[state=on]:text-white">
-                          Seller
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </div>
-                  </div>
-
                   <Button 
                     type="submit" 
                     className="w-full bg-gold hover:bg-gold-dark"
-                    disabled={loading}
+                    disabled={loading || checkingAccountType}
                   >
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading || checkingAccountType ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
 

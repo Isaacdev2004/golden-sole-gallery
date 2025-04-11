@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -33,6 +34,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
@@ -42,8 +45,44 @@ const BuyerDashboard = () => {
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   const [showActivityStatus, setShowActivityStatus] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingProfile(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load your profile",
+            variant: "destructive",
+          });
+        } else {
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user, toast]);
   
   const recentPurchases = [
     { id: 1, name: "Summer Collection", seller: "GoldenSteps", price: "$15.00", date: "April 3, 2025", image: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
@@ -61,10 +100,11 @@ const BuyerDashboard = () => {
     { id: 5, name: "SoleStyle", displayName: "Sophia Martinez", rating: 4.9, content: { photos: 112, videos: 45 }, image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&auto=format&q=80" },
   ];
   
+  // Use the actual user profile data (if available) or fallback to default values
   const userData = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    memberSince: "March 2025",
+    name: userProfile?.full_name || "Loading...",
+    email: user?.email || "Loading...",
+    memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
     credits: 50,
   };
 
@@ -131,17 +171,19 @@ const BuyerDashboard = () => {
             <CardContent>
               <div className="flex flex-col items-center mb-4">
                 <Avatar className="h-24 w-24 mb-4">
-                  <AvatarFallback className="bg-gold text-white text-xl">{userData.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-gold text-white text-xl">
+                    {isLoadingProfile ? "..." : (userData.name.charAt(0) || "?")}
+                  </AvatarFallback>
                 </Avatar>
-                <h3 className="text-xl font-semibold">{userData.name}</h3>
-                <p className="text-gray-500">{userData.email}</p>
+                <h3 className="text-xl font-semibold">{isLoadingProfile ? "Loading..." : userData.name}</h3>
+                <p className="text-gray-500">{isLoadingProfile ? "Loading..." : userData.email}</p>
                 <Badge className="mt-2 bg-gold">Buyer</Badge>
               </div>
               
               <div className="space-y-3 mt-6">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Member since:</span>
-                  <span className="font-medium">{userData.memberSince}</span>
+                  <span className="font-medium">{isLoadingProfile ? "Loading..." : userData.memberSince}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Credits:</span>

@@ -82,14 +82,14 @@ const App = () => (
             <Route path="/sellers" element={<Sellers />} />
             <Route path="/seller/:id" element={<SellerProfile />} />
             
-            {/* Protected routes */}
+            {/* Protected routes with specific account type requirements */}
             <Route path="/buyer-dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredAccountType="buyer">
                 <BuyerDashboard />
               </ProtectedRoute>
             } />
             <Route path="/seller-dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredAccountType="seller">
                 <SellerDashboard />
               </ProtectedRoute>
             } />
