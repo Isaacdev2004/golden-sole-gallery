@@ -13,6 +13,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+// Define an extended profile type that includes our extra fields
+interface ExtendedProfile {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  account_type: string;
+  full_name: string | null;
+  username?: string | null;
+  bio?: string | null;
+  profile_image?: string | null;
+}
+
 const SellerProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -46,6 +58,9 @@ const SellerProfile = () => {
           navigate('/browse');
           return;
         }
+        
+        // Cast the profile to our extended type
+        const extendedProfile = profile as ExtendedProfile;
         
         // Check if the current user is following this seller
         if (user) {
@@ -106,10 +121,10 @@ const SellerProfile = () => {
           .limit(4);
         
         // Build seller data object - using safe fallbacks for properties that might not exist
-        const username = profile.username || profile.full_name?.split(' ')[0]?.toLowerCase() || "seller";
-        const displayName = profile.full_name || "Seller";
-        const bio = profile.bio || "No bio available";
-        const profileImage = profile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80";
+        const username = extendedProfile.username || extendedProfile.full_name?.split(' ')[0]?.toLowerCase() || "seller";
+        const displayName = extendedProfile.full_name || "Seller";
+        const bio = extendedProfile.bio || "No bio available";
+        const profileImage = extendedProfile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80";
         
         setSellerData({
           id,
@@ -118,7 +133,7 @@ const SellerProfile = () => {
           verificationBadge: false,
           rating: rating || 4.8,
           reviewCount: reviewCount || 0,
-          joinDate: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          joinDate: new Date(extendedProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           subscribers: subscriberCount || 0,
           likes: (likesCount || 0) / 1000,
           bio,
