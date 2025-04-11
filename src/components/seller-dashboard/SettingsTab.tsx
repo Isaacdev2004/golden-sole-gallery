@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,14 +14,21 @@ import { supabase } from "@/integrations/supabase/client";
 interface ProfileData {
   id: string;
   full_name: string | null;
-  username?: string;
+  username?: string | null;
   email?: string;
-  phone?: string;
-  bio?: string;
-  website?: string;
-  social?: string;
+  phone?: string | null;
+  bio?: string | null;
+  website?: string | null;
+  social?: string | null;
   profile_image: string | null;
   account_type: string;
+  payment_method?: string | null;
+  currency?: string | null;
+  email_notifications?: boolean | null;
+  sms_notifications?: boolean | null;
+  marketing_updates?: boolean | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface SettingsFormData {
