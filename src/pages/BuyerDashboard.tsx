@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -507,6 +508,7 @@ const BuyerDashboard = () => {
         <h1 className="text-3xl font-bold mb-6">Buyer Dashboard</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Card */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle>Your Profile</CardTitle>
@@ -646,6 +648,7 @@ const BuyerDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {/* Recent Purchases Content */}
                     {loadingPurchases ? (
                       renderLoadingState()
                     ) : recentPurchases.length > 0 ? (
@@ -860,6 +863,7 @@ const BuyerDashboard = () => {
         </div>
       </div>
       
+      {/* Creator Detail Dialog */}
       <Dialog open={showCreatorDetail} onOpenChange={setShowCreatorDetail}>
         <DialogContent className="max-w-md sm:max-w-lg overflow-y-auto max-h-[85vh]">
           <DialogHeader>
@@ -902,4 +906,91 @@ const BuyerDashboard = () => {
               <div className="pt-2 flex justify-end gap-2">
                 <Button 
                   variant="outline" 
-                  className="border-gold text-gold hover:bg-gold/
+                  className="border-gold text-gold hover:bg-gold/10"
+                  onClick={closeCreatorDetail}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="bg-gold hover:bg-gold-dark"
+                  onClick={() => navigate(`/seller/${selectedCreator.id}`)}
+                >
+                  Visit Profile
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Profile Image Upload Dialog */}
+      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Profile Image</DialogTitle>
+            <DialogDescription>
+              Upload a new profile image to personalize your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {previewImage ? (
+              <div className="relative mx-auto w-40 h-40 rounded-full overflow-hidden border-2 border-gold">
+                <img 
+                  src={previewImage} 
+                  alt="Profile Preview" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mx-auto w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400">
+                <Camera className="h-16 w-16 text-gray-400" />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="profile-image" className="font-medium">Select Image</Label>
+              <Input 
+                id="profile-image" 
+                type="file" 
+                accept="image/jpeg, image/png, image/gif, image/webp"
+                onChange={handleImageChange}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-gray-500">
+                Supported formats: JPEG, PNG, GIF, WEBP. Maximum size: 5MB.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPreviewImage(null);
+                  setProfileImageFile(null);
+                  setIsProfileDialogOpen(false);
+                }}
+                disabled={isUploading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={uploadProfileImage}
+                disabled={!profileImageFile || isUploading}
+                className="bg-gold hover:bg-gold-dark"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : 'Upload Image'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default BuyerDashboard;
