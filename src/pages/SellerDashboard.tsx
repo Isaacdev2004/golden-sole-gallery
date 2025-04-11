@@ -1,9 +1,12 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 // Import refactored components
 import ProfileCard from "@/components/seller-dashboard/ProfileCard";
@@ -18,6 +21,15 @@ import WithdrawDialog from "@/components/seller-dashboard/WithdrawDialog";
 
 // Import necessary lucide icons
 import { Banknote, DollarSign, CreditCard, Wallet } from "lucide-react";
+
+interface SellerProfile {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  profile_image: string | null;
+  bio: string | null;
+  created_at: string;
+}
 
 const SellerDashboard = () => {
   const location = useLocation();
@@ -36,17 +48,57 @@ const SellerDashboard = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawNote, setWithdrawNote] = useState("");
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   
+  // Real data from Supabase
+  const [sellerData, setSellerData] = useState({
+    name: "",
+    username: "",
+    verified: false,
+    profileImage: "",
+    memberSince: "",
+    rating: 0,
+    reviews: 0,
+    balance: 0,
+    pendingBalance: 0,
+    earnings: {
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0,
+    },
+    stats: {
+      followers: 0,
+      totalContent: 0,
+      views: 0,
+    },
+    recentSales: [] as Array<{
+      id: number;
+      item: string;
+      buyer: string;
+      price: string;
+      date: string;
+    }>,
+    content: {
+      photos: 0,
+      videos: 0,
+    },
+    bio: ""
+  });
+
   // Define the content items - make sure 'type' is explicitly "photo" or "video"
-  const [contentItems, setContentItems] = useState([
-    { id: 1, type: "photo" as const, title: "Beach Day", likes: 24, sales: 7, price: "$5.99", date: "2025-03-15", thumbnail: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80" },
-    { id: 2, type: "photo" as const, title: "Summer Vibes", likes: 18, sales: 5, price: "$4.99", date: "2025-03-10", thumbnail: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80" },
-    { id: 3, type: "video" as const, title: "Walking Tour", likes: 32, sales: 12, price: "$9.99", date: "2025-04-01", thumbnail: "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&h=400&auto=format&q=80" },
-    { id: 4, type: "photo" as const, title: "Winter Collection", likes: 15, sales: 3, price: "$7.99", date: "2025-02-20", thumbnail: "https://images.unsplash.com/photo-1551489186-cf8726f514f5?w=400&h=400&auto=format&q=80" },
-    { id: 5, type: "video" as const, title: "Beach Sunset", likes: 45, sales: 18, price: "$12.99", date: "2025-03-25", thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" },
-  ]);
+  const [contentItems, setContentItems] = useState<Array<{
+    id: number;
+    type: "photo" | "video";
+    title: string;
+    likes: number;
+    sales: number;
+    price: string;
+    date: string;
+    thumbnail: string;
+  }>>([]);
 
   // State for filters and sorting
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
@@ -54,39 +106,6 @@ const SellerDashboard = () => {
   const [filterType, setFilterType] = useState<"all" | "photo" | "video">("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price-high" | "price-low" | "popular">("newest");
   const [filteredContent, setFilteredContent] = useState(contentItems);
-
-  // State for seller profile data
-  const [sellerData, setSellerData] = useState({
-    name: "Olivia Grace",
-    username: "GoldenSteps",
-    verified: true,
-    profileImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
-    memberSince: "January 2025",
-    rating: 4.8,
-    reviews: 156,
-    balance: 1238.50,
-    pendingBalance: 420.75,
-    earnings: {
-      today: 85.50,
-      thisWeek: 412.25,
-      thisMonth: 1250.80,
-    },
-    stats: {
-      followers: 256,
-      totalContent: 179,
-      views: 12584,
-    },
-    recentSales: [
-      { id: 1, item: "Summer Beach Set", buyer: "JohnD", price: "$15.00", date: "Today" },
-      { id: 2, item: "Exclusive Package", buyer: "FeetFan22", price: "$45.00", date: "Yesterday" },
-      { id: 3, item: "Weekly Subscription", buyer: "SoleCollector", price: "$19.99", date: "Apr 5, 2025" },
-    ],
-    content: {
-      photos: 137,
-      videos: 42,
-    },
-    bio: "Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025."
-  });
 
   const paymentMethods = [
     { 
@@ -147,6 +166,213 @@ const SellerDashboard = () => {
 
   const COLORS = ['#FFD700', '#d4af37', '#FFC72C', '#C5B358'];
 
+  // Fetch seller profile data
+  useEffect(() => {
+    const fetchSellerData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get profile data
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          throw error;
+        }
+
+        // Get follower count
+        const { count: followerCount, error: followerError } = await supabase
+          .from('followers')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', user.id);
+          
+        if (followerError) {
+          console.error("Error fetching followers:", followerError);
+        }
+        
+        // Get content count
+        const { data: contentData, error: contentError } = await supabase
+          .from('content')
+          .select('id, type')
+          .eq('seller_id', user.id);
+          
+        if (contentError) {
+          console.error("Error fetching content:", contentError);
+        }
+        
+        const photoCount = contentData?.filter(item => item.type === 'photo').length || 0;
+        const videoCount = contentData?.filter(item => item.type === 'video').length || 0;
+        
+        // Get content views
+        const { count: viewCount, error: viewError } = await supabase
+          .from('content_views')
+          .select('*', { count: 'exact', head: true })
+          .in('content_id', contentData?.map(item => item.id) || []);
+          
+        if (viewError) {
+          console.error("Error fetching content views:", viewError);
+        }
+        
+        // Get earnings data
+        const { data: earningsData, error: earningsError } = await supabase
+          .from('earnings')
+          .select('amount, created_at, status')
+          .eq('seller_id', user.id);
+          
+        if (earningsError) {
+          console.error("Error fetching earnings:", earningsError);
+        }
+        
+        // Calculate earnings
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString();
+        
+        const completedEarnings = earningsData?.filter(item => item.status === 'completed') || [];
+        
+        const todayEarnings = completedEarnings
+          .filter(item => new Date(item.created_at) >= new Date(today))
+          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          
+        const weekEarnings = completedEarnings
+          .filter(item => new Date(item.created_at) >= new Date(weekAgo))
+          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          
+        const monthEarnings = completedEarnings
+          .filter(item => new Date(item.created_at) >= new Date(monthAgo))
+          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        
+        // Calculate balance
+        const availableBalance = completedEarnings.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        const pendingBalance = (earningsData?.filter(item => item.status === 'pending') || [])
+          .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        
+        // Get recent purchases
+        const { data: purchasesData, error: purchasesError } = await supabase
+          .from('purchases')
+          .select(`
+            id, 
+            price, 
+            purchase_date, 
+            content_id, 
+            content:content_id (title), 
+            buyer_id, 
+            buyer:buyer_id (profiles:id (username, full_name))
+          `)
+          .eq('seller_id', user.id)
+          .order('purchase_date', { ascending: false })
+          .limit(3);
+          
+        if (purchasesError) {
+          console.error("Error fetching purchases:", purchasesError);
+        }
+        
+        // Format recent sales
+        const recentSales = purchasesData?.map(purchase => {
+          // @ts-ignore - we know the join structure
+          const buyerName = purchase.buyer?.profiles?.username || purchase.buyer?.profiles?.full_name || "Anonymous";
+          // @ts-ignore - we know the join structure
+          const itemName = purchase.content?.title || "Content";
+          
+          // Format date
+          const purchaseDate = new Date(purchase.purchase_date);
+          const now = new Date();
+          const isToday = purchaseDate.toDateString() === now.toDateString();
+          const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === purchaseDate.toDateString();
+          
+          let dateDisplay;
+          if (isToday) {
+            dateDisplay = "Today";
+          } else if (isYesterday) {
+            dateDisplay = "Yesterday";
+          } else {
+            dateDisplay = purchaseDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            });
+          }
+          
+          return {
+            id: purchase.id,
+            item: itemName,
+            buyer: buyerName,
+            price: `$${parseFloat(purchase.price).toFixed(2)}`,
+            date: dateDisplay
+          };
+        }) || [];
+
+        // Get creation date
+        const memberSince = new Date(profileData.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        // Format the seller data
+        setSellerData({
+          name: profileData.full_name || "Seller",
+          username: profileData.username || "user",
+          verified: true, // We could add a verified field to the profiles table if needed
+          profileImage: profileData.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
+          memberSince,
+          rating: 4.8, // Placeholder until we implement ratings
+          reviews: 0, // Placeholder until we implement reviews
+          balance: availableBalance,
+          pendingBalance,
+          earnings: {
+            today: todayEarnings,
+            thisWeek: weekEarnings,
+            thisMonth: monthEarnings,
+          },
+          stats: {
+            followers: followerCount || 0,
+            totalContent: (photoCount + videoCount) || 0,
+            views: viewCount || 0,
+          },
+          recentSales,
+          content: {
+            photos: photoCount,
+            videos: videoCount,
+          },
+          bio: profileData.bio || "Content creator"
+        });
+
+        // Fetch and set content items
+        if (contentData && contentData.length > 0) {
+          const formattedContent = contentData.map((item, index) => {
+            return {
+              id: index + 1,
+              type: item.type as "photo" | "video",
+              title: `Content ${index + 1}`, // We'll update this when we fetch the full content data
+              likes: 0, // Placeholder
+              sales: 0, // Placeholder
+              price: "$9.99", // Placeholder
+              date: new Date().toISOString().split('T')[0], // Placeholder
+              thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" // Placeholder
+            };
+          });
+          
+          setContentItems(formattedContent);
+        }
+
+      } catch (error) {
+        console.error("Error fetching seller data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load seller data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSellerData();
+  }, [user, toast]);
+
   const handleUploadButtonClick = () => {
     setUploadDialogOpen(true);
     resetUploadForm();
@@ -188,8 +414,8 @@ const SellerDashboard = () => {
     fileInputRef.current?.click();
   };
 
-  const handleSubmitUpload = () => {
-    if (!selectedFile || !title || !price) {
+  const handleSubmitUpload = async () => {
+    if (!user || !selectedFile || !title || !price) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -198,25 +424,79 @@ const SellerDashboard = () => {
       return;
     }
     
-    toast({
-      title: "Content uploaded successfully!",
-      description: "Your new content is now available on your profile",
-    });
-    
-    const newContentItem = {
-      id: contentItems.length + 1,
-      type: fileType === "image" ? "photo" as const : "video" as const,
-      title: title,
-      likes: 0,
-      sales: 0,
-      price: `$${price}`,
-      date: new Date().toISOString().split('T')[0],
-      thumbnail: filePreview || ""
-    };
-    
-    setContentItems([newContentItem, ...contentItems]);
-    setUploadDialogOpen(false);
-    resetUploadForm();
+    try {
+      // Upload the file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+      
+      // TODO: Create a bucket and update this code when storage is set up
+      // const { data: uploadData, error: uploadError } = await supabase
+      //   .storage
+      //   .from('content')
+      //   .upload(filePath, selectedFile);
+      //
+      // if (uploadError) throw uploadError;
+      
+      // Insert content record in the database
+      const { data: contentData, error: contentError } = await supabase
+        .from('content')
+        .insert({
+          seller_id: user.id,
+          title: title,
+          description: caption,
+          price: parseFloat(price),
+          type: fileType === "image" ? "photo" : "video",
+          // content_url: uploadData?.path, // Uncomment when storage is set up
+          // thumbnail_url: uploadData?.path // Uncomment when storage is set up
+        })
+        .select()
+        .single();
+      
+      if (contentError) throw contentError;
+      
+      toast({
+        title: "Content uploaded successfully!",
+        description: "Your new content is now available on your profile",
+      });
+      
+      // Add the new content to the existing content items
+      const newContentItem = {
+        id: contentItems.length + 1,
+        type: fileType === "image" ? "photo" as const : "video" as const,
+        title: title,
+        likes: 0,
+        sales: 0,
+        price: `$${price}`,
+        date: new Date().toISOString().split('T')[0],
+        thumbnail: filePreview || ""
+      };
+      
+      setContentItems([newContentItem, ...contentItems]);
+      
+      // Update seller stats
+      setSellerData(prev => ({
+        ...prev,
+        stats: {
+          ...prev.stats,
+          totalContent: prev.stats.totalContent + 1
+        },
+        content: {
+          photos: fileType === "image" ? prev.content.photos + 1 : prev.content.photos,
+          videos: fileType === "video" ? prev.content.videos + 1 : prev.content.videos
+        }
+      }));
+      
+      setUploadDialogOpen(false);
+      resetUploadForm();
+    } catch (error) {
+      console.error("Error uploading content:", error);
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading your content",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleUpdateContent = (updatedContent: any[]) => {
@@ -260,18 +540,46 @@ const SellerDashboard = () => {
     setWithdrawStage("confirm");
   };
 
-  const handleWithdrawalConfirmation = () => {
+  const handleWithdrawalConfirmation = async () => {
+    if (!user) return;
+    
     setIsProcessingWithdrawal(true);
     
-    setTimeout(() => {
-      setIsProcessingWithdrawal(false);
+    try {
+      // Create a withdrawal record
+      const { error } = await supabase
+        .from('withdrawals')
+        .insert({
+          seller_id: user.id,
+          amount: parseFloat(withdrawAmount),
+          payment_method: selectedPaymentMethod || 'bank',
+          status: 'pending'
+        });
+      
+      if (error) throw error;
+      
+      // Update the local state to reflect the withdrawal
+      setSellerData(prev => ({
+        ...prev,
+        balance: prev.balance - parseFloat(withdrawAmount)
+      }));
+      
       setWithdrawStage("success");
       
       toast({
         title: "Withdrawal initiated",
         description: `$${withdrawAmount} will be sent to your selected payment method`,
       });
-    }, 1500);
+    } catch (error) {
+      console.error("Error processing withdrawal:", error);
+      toast({
+        title: "Withdrawal failed",
+        description: "An error occurred while processing your withdrawal",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingWithdrawal(false);
+    }
   };
 
   const closeWithdrawDialog = () => {
@@ -370,6 +678,17 @@ const SellerDashboard = () => {
     setFilteredContent(filtered);
   }, [filterType, sortBy, contentItems]);
 
+  if (loading) {
+    return (
+      <>
+        <Navigation />
+        <div className="container mx-auto px-4 py-12 flex justify-center items-center">
+          <p className="text-lg">Loading seller dashboard...</p>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navigation />
@@ -387,6 +706,7 @@ const SellerDashboard = () => {
               rating={sellerData.rating}
               reviews={sellerData.reviews}
               content={sellerData.content}
+              bio={sellerData.bio}
               onProfileUpdate={handleProfileUpdate}
             />
             

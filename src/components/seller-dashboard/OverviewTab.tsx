@@ -44,7 +44,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Today's Earnings</p>
-                <p className="text-2xl font-bold">${sellerData.earnings.today}</p>
+                <p className="text-2xl font-bold">${sellerData.earnings.today.toFixed(2)}</p>
               </div>
               <div className="bg-gold/10 p-3 rounded-full">
                 <DollarSign className="h-6 w-6 text-gold" />
@@ -90,15 +90,21 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sellerData.recentSales.map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between p-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{sale.item}</p>
-                    <p className="text-xs text-gray-500">Purchased by {sale.buyer} • {sale.date}</p>
+              {sellerData.recentSales.length > 0 ? (
+                sellerData.recentSales.map((sale) => (
+                  <div key={sale.id} className="flex items-center justify-between p-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{sale.item}</p>
+                      <p className="text-xs text-gray-500">Purchased by {sale.buyer} • {sale.date}</p>
+                    </div>
+                    <p className="font-medium text-gold">{sale.price}</p>
                   </div>
-                  <p className="font-medium text-gold">{sale.price}</p>
+                ))
+              ) : (
+                <div className="p-3 text-center text-gray-500">
+                  No sales yet. Upload content to start selling!
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

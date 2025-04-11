@@ -83,6 +83,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       }
       
       setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully."
+      });
     } catch (error) {
       console.error("Error in profile update:", error);
       toast({
@@ -99,17 +104,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <CardContent className="pt-6">
           <div className="flex flex-col items-center mb-4">
             <Avatar className="h-24 w-24 mb-4 border-2 border-gold">
-              <AvatarImage src={profileImage} alt={name} />
+              <AvatarImage src={profileImage || "/placeholder.svg"} alt={name} />
               <AvatarFallback className="bg-gold text-white text-xl">
-                {name.charAt(0)}
+                {name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
-                <h3 className="text-xl font-semibold">{name}</h3>
+                <h3 className="text-xl font-semibold">{name || "Seller"}</h3>
                 {verified && <span className="text-gold">✓</span>}
               </div>
-              <p className="text-gray-500">@{username}</p>
+              <p className="text-gray-500">@{username || "user"}</p>
               <Badge className="mt-2 bg-gold">Seller</Badge>
             </div>
           </div>
