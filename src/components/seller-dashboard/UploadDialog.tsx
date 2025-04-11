@@ -10,50 +10,46 @@ import { Upload } from "lucide-react";
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedFile: File | null;
   filePreview: string | null;
   fileType: "image" | "video" | null;
   title: string;
   caption: string;
   price: string;
-  uploadStep: "select" | "details";
+  step: "select" | "details";
   onTitleChange: (value: string) => void;
   onCaptionChange: (value: string) => void;
   onPriceChange: (value: string) => void;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onUploadStepChange: (step: "select" | "details") => void;
   onSubmit: () => void;
   triggerFileInput: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
 }
 
 const UploadDialog: React.FC<UploadDialogProps> = ({
   open,
   onOpenChange,
-  selectedFile,
   filePreview,
   fileType,
   title,
   caption,
   price,
-  uploadStep,
+  step,
   onTitleChange,
   onCaptionChange,
   onPriceChange,
   onFileSelect,
-  onUploadStepChange,
   onSubmit,
   triggerFileInput,
+  fileInputRef,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{uploadStep === "select" ? "Upload Content" : "Content Details"}</DialogTitle>
+          <DialogTitle>{step === "select" ? "Upload Content" : "Content Details"}</DialogTitle>
         </DialogHeader>
         
-        {uploadStep === "select" ? (
+        {step === "select" ? (
           <div className="space-y-4">
             <div 
               className="border-2 border-dashed rounded-lg p-12 text-center cursor-pointer hover:bg-gray-50 transition-colors"
@@ -135,7 +131,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
             <DialogFooter className="grid grid-cols-2 gap-2 sm:justify-start">
               <Button 
                 variant="outline"
-                onClick={() => onUploadStepChange("select")}
+                onClick={() => onOpenChange(false)}
               >
                 Back
               </Button>

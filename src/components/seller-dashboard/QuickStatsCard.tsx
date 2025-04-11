@@ -5,14 +5,36 @@ import { BarChart3, ChevronUp, DollarSign, Users } from "lucide-react";
 
 interface QuickStatsCardProps {
   balance: number;
-  followers: number;
-  views: number;
+  followers?: number;
+  views?: number;
+  earnings?: {
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
+  content?: {
+    photos: number;
+    videos: number;
+  };
+  recentSales?: Array<{
+    id: string;
+    item: string;
+    buyer: string;
+    price: string;
+    date: string;
+  }>;
+  loading?: boolean;
+  onUploadClick?: () => void;
+  onWithdrawClick?: () => void;
 }
 
 const QuickStatsCard: React.FC<QuickStatsCardProps> = ({
   balance,
-  followers,
-  views,
+  followers = 0,
+  views = 0,
+  earnings,
+  content,
+  loading,
 }) => {
   return (
     <Card>

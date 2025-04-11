@@ -5,32 +5,43 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3, DollarSign, Image, Settings, Upload, User } from "lucide-react";
 
+interface RecentSale {
+  id: string;
+  item: string;
+  buyer: string;
+  price: string;
+  date: string;
+}
+
+interface ContentItem {
+  id: string;
+  type: "photo" | "video";
+  title: string;
+  likes: number;
+  sales: number;
+  price: string;
+  date: string;
+  thumbnail: string;
+}
+
 interface OverviewTabProps {
-  sellerData: {
-    earnings: {
-      today: number;
-      thisWeek: number;
-      thisMonth: number;
-    };
-    stats: {
-      totalContent: number;
-    };
-    recentSales: Array<{
-      id: string; // Changed from number to string to match Supabase
-      item: string;
-      buyer: string;
-      price: string;
-      date: string;
-    }>;
+  earnings: {
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
   };
+  recentSales: RecentSale[];
+  contentItems: ContentItem[];
   onUploadClick: () => void;
-  onSettingsClick: () => void;
-  onAnalyticsClick: () => void;
-  onWithdrawClick: () => void;
+  onSettingsClick?: () => void;
+  onAnalyticsClick?: () => void;
+  onWithdrawClick?: () => void;
 }
 
 const OverviewTab: React.FC<OverviewTabProps> = ({
-  sellerData,
+  earnings,
+  recentSales,
+  contentItems,
   onUploadClick,
   onSettingsClick,
   onAnalyticsClick,
@@ -44,7 +55,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Today's Earnings</p>
-                <p className="text-2xl font-bold">${sellerData.earnings.today.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${earnings.today.toFixed(2)}</p>
               </div>
               <div className="bg-gold/10 p-3 rounded-full">
                 <DollarSign className="h-6 w-6 text-gold" />
@@ -58,7 +69,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Content</p>
-                <p className="text-2xl font-bold">{sellerData.stats.totalContent}</p>
+                <p className="text-2xl font-bold">{contentItems?.length || 0}</p>
               </div>
               <div className="bg-gold/10 p-3 rounded-full">
                 <Image className="h-6 w-6 text-gold" />
@@ -90,8 +101,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sellerData.recentSales.length > 0 ? (
-                sellerData.recentSales.map((sale) => (
+              {recentSales?.length > 0 ? (
+                recentSales.map((sale) => (
                   <div key={sale.id} className="flex items-center justify-between p-3 border-b last:border-0">
                     <div>
                       <p className="font-medium">{sale.item}</p>

@@ -21,31 +21,35 @@ export interface ContentItem {
 }
 
 interface ContentTabProps {
+  contentItems: ContentItem[];
   filteredContent: ContentItem[];
   filterType: "all" | "photo" | "video";
   sortBy: "newest" | "oldest" | "price-high" | "price-low" | "popular";
   filterPopoverOpen: boolean;
   sortPopoverOpen: boolean;
-  onAddNewClick: () => void;
+  onUploadClick: () => void;
   setFilterPopoverOpen: (open: boolean) => void;
   setSortPopoverOpen: (open: boolean) => void;
   setFilterType: (type: "all" | "photo" | "video") => void;
   setSortBy: (sort: "newest" | "oldest" | "price-high" | "price-low" | "popular") => void;
   onUpdateContent?: (updatedContent: ContentItem[]) => void;
+  loading?: boolean;
 }
 
 const ContentTab: React.FC<ContentTabProps> = ({
+  contentItems,
   filteredContent,
   filterType,
   sortBy,
   filterPopoverOpen,
   sortPopoverOpen,
-  onAddNewClick,
+  onUploadClick,
   setFilterPopoverOpen,
   setSortPopoverOpen,
   setFilterType,
   setSortBy,
   onUpdateContent,
+  loading
 }) => {
   const { toast } = useToast();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -124,7 +128,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
           <CardTitle>My Content</CardTitle>
           <Button 
             className="bg-gold hover:bg-gold-dark"
-            onClick={onAddNewClick}
+            onClick={onUploadClick}
           >
             <Plus className="h-4 w-4 mr-1" />
             Add New

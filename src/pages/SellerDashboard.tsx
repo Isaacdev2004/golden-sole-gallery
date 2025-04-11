@@ -273,7 +273,7 @@ const SellerDashboard = () => {
             content_id, 
             content:content_id (title), 
             buyer_id, 
-            buyer:buyer_id (profiles:id (username, full_name))
+            buyer:buyer_id (id, username, full_name)
           `)
           .eq('seller_id', user.id)
           .order('purchase_date', { ascending: false })
@@ -284,10 +284,11 @@ const SellerDashboard = () => {
         }
         
         const recentSales: RecentSale[] = purchasesData?.map(purchase => {
-          const buyerName = purchase.buyer?.profiles?.username || purchase.buyer?.profiles?.full_name || "Anonymous";
+          const buyerName = purchase.buyer?.username || purchase.buyer?.full_name || "Anonymous";
           const itemName = purchase.content?.title || "Content";
           
           const purchaseDate = new Date(purchase.purchase_date);
+          const now = new Date();
           const isToday = purchaseDate.toDateString() === now.toDateString();
           const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === purchaseDate.toDateString();
           
@@ -884,21 +885,19 @@ const SellerDashboard = () => {
               memberSince={sellerData.memberSince}
               rating={sellerData.rating}
               reviews={sellerData.reviews}
-              stats={sellerData.stats}
+              content={sellerData.content}
+              bio={sellerData.bio}
               onSettingsClick={handleSettingsClick}
               onAnalyticsClick={handleAnalyticsClick}
               onContentClick={handleContentClick}
+              onProfileUpdate={handleProfileUpdate}
               loading={loading}
             />
             
             <QuickStatsCard 
-              earnings={sellerData.earnings}
-              content={sellerData.content}
               balance={sellerData.balance}
-              recentSales={sellerData.recentSales}
-              loading={loading}
-              onUploadClick={handleUploadButtonClick}
-              onWithdrawClick={handleWithdrawButtonClick}
+              followers={sellerData.stats.followers}
+              views={sellerData.stats.views}
             />
           </div>
           
@@ -918,6 +917,9 @@ const SellerDashboard = () => {
                   recentSales={sellerData.recentSales}
                   contentItems={contentItems.slice(0, 3)}
                   onUploadClick={handleUploadButtonClick}
+                  onWithdrawClick={handleWithdrawButtonClick}
+                  onSettingsClick={handleSettingsClick}
+                  onAnalyticsClick={handleAnalyticsClick}
                 />
               </TabsContent>
               
@@ -928,13 +930,13 @@ const SellerDashboard = () => {
                   sortBy={sortBy}
                   filterPopoverOpen={filterPopoverOpen}
                   sortPopoverOpen={sortPopoverOpen}
-                  onFilterTypeChange={setFilterType}
-                  onSortByChange={setSortBy}
-                  onFilterPopoverOpenChange={setFilterPopoverOpen}
-                  onSortPopoverOpenChange={setSortPopoverOpen}
-                  onContentUpdate={handleUpdateContent}
-                  filteredContent={filteredContent}
                   onUploadClick={handleUploadButtonClick}
+                  setFilterPopoverOpen={setFilterPopoverOpen}
+                  setSortPopoverOpen={setSortPopoverOpen}
+                  setFilterType={setFilterType}
+                  setSortBy={setSortBy}
+                  onUpdateContent={handleUpdateContent}
+                  filteredContent={filteredContent}
                   loading={loading}
                 />
               </TabsContent>

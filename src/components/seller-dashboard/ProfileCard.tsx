@@ -18,11 +18,20 @@ interface ProfileCardProps {
   memberSince: string;
   rating: number;
   reviews: number;
-  content: {
+  stats?: {
+    followers: number;
+    totalContent: number;
+    views: number;
+  };
+  content?: {
     photos: number;
     videos: number;
   };
   bio?: string;
+  loading?: boolean;
+  onSettingsClick?: () => void;
+  onAnalyticsClick?: () => void;
+  onContentClick?: () => void;
   onProfileUpdate?: (updatedProfile: {
     name: string;
     username: string;
@@ -39,7 +48,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   memberSince,
   rating,
   reviews,
-  content,
+  content = {
+    photos: 0,
+    videos: 0,
+  },
   bio = "",
   onProfileUpdate,
 }) => {
