@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,24 +9,124 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Instagram } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ProfileData {
+  id: string;
+  full_name: string | null;
+  username?: string;
+  email?: string;
+  phone?: string;
+  bio?: string;
+  website?: string;
+  social?: string;
+  profile_image: string | null;
+  account_type: string;
+}
+
+interface SettingsFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  username: string;
+  bio: string;
+  website: string;
+  social: string;
+  paymentMethod: string;
+  currency: string;
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  marketingUpdates: boolean;
+}
 
 const SettingsTab: React.FC = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    firstName: "Olivia",
-    lastName: "Grace",
-    email: "olivia@example.com",
-    phone: "+1 555-123-4567",
-    username: "GoldenSteps",
-    bio: "Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025.",
-    website: "https://oliviagrace.com",
-    social: "@olivia.grace",
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState<SettingsFormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    username: "",
+    bio: "",
+    website: "",
+    social: "",
     paymentMethod: "bank",
     currency: "usd",
     emailNotifications: true,
     smsNotifications: false,
     marketingUpdates: true
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get user email from auth
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        // Get user profile from profiles table
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching profile:", error);
+          toast({
+            title: "Error",
+            description: "Could not load profile data",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Extract first and last name from full name
+        let firstName = "";
+        let lastName = "";
+        if (profileData.full_name) {
+          const nameParts = profileData.full_name.split(" ");
+          firstName = nameParts[0] || "";
+          lastName = nameParts.slice(1).join(" ") || "";
+        }
+        
+        // Set form data with values from the database or defaults
+        setFormData({
+          firstName,
+          lastName,
+          email: authUser?.email || "",
+          phone: profileData.phone || "+1 555-123-4567",
+          username: profileData.username || "GoldenSteps",
+          bio: profileData.bio || "Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025.",
+          website: profileData.website || "https://oliviagrace.com",
+          social: profileData.social || "@olivia.grace",
+          paymentMethod: profileData.payment_method || "bank",
+          currency: profileData.currency || "usd",
+          emailNotifications: profileData.email_notifications !== false,
+          smsNotifications: profileData.sms_notifications === true,
+          marketingUpdates: profileData.marketing_updates !== false
+        });
+      } catch (error) {
+        console.error("Error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -41,12 +141,73 @@ const SettingsTab: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your profile settings have been updated successfully."
-    });
+  const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "Please log in to save settings",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Combine first and last name into full_name
+      const full_name = `${formData.firstName} ${formData.lastName}`.trim();
+      
+      // Update the profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name,
+          username: formData.username,
+          phone: formData.phone,
+          bio: formData.bio,
+          website: formData.website,
+          social: formData.social,
+          payment_method: formData.paymentMethod,
+          currency: formData.currency,
+          email_notifications: formData.emailNotifications,
+          sms_notifications: formData.smsNotifications,
+          marketing_updates: formData.marketingUpdates
+        })
+        .eq('id', user.id);
+      
+      if (error) {
+        console.error("Error updating profile:", error);
+        toast({
+          title: "Update failed",
+          description: "Could not save profile settings",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Settings saved",
+        description: "Your profile settings have been updated successfully."
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center py-12">
+            <p>Loading settings...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -88,6 +249,7 @@ const SettingsTab: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="mt-1" 
+                  readOnly
                 />
               </div>
               <div>
