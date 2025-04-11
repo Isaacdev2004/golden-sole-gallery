@@ -35,6 +35,9 @@ const QuickStatsCard: React.FC<QuickStatsCardProps> = ({
   earnings,
   content,
   loading,
+  recentSales,
+  onUploadClick,
+  onWithdrawClick
 }) => {
   return (
     <Card>

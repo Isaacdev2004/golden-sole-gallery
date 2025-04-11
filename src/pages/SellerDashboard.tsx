@@ -271,9 +271,8 @@ const SellerDashboard = () => {
             price, 
             purchase_date, 
             content_id, 
-            content:content_id (title), 
-            buyer_id, 
-            buyer:buyer_id (id, username, full_name)
+            buyer_id,
+            seller_id
           `)
           .eq('seller_id', user.id)
           .order('purchase_date', { ascending: false })
@@ -283,9 +282,21 @@ const SellerDashboard = () => {
           console.error("Error fetching purchases:", purchasesError);
         }
         
-        const recentSales: RecentSale[] = purchasesData?.map(purchase => {
-          const buyerName = purchase.buyer?.username || purchase.buyer?.full_name || "Anonymous";
-          const itemName = purchase.content?.title || "Content";
+        const recentSales = await Promise.all((purchasesData || []).map(async purchase => {
+          const { data: buyerData } = await supabase
+            .from('profiles')
+            .select('username, full_name')
+            .eq('id', purchase.buyer_id)
+            .single();
+          
+          const { data: contentData } = await supabase
+            .from('content')
+            .select('title')
+            .eq('id', purchase.content_id)
+            .single();
+          
+          const buyerName = buyerData?.username || buyerData?.full_name || "Anonymous";
+          const itemName = contentData?.title || "Content";
           
           const purchaseDate = new Date(purchase.purchase_date);
           const now = new Date();
@@ -312,7 +323,7 @@ const SellerDashboard = () => {
             price: `$${parseFloat(purchase.price.toString()).toFixed(2)}`,
             date: dateDisplay
           };
-        }) || [];
+        }));
 
         const memberSince = new Date(profileData.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
@@ -898,6 +909,11 @@ const SellerDashboard = () => {
               balance={sellerData.balance}
               followers={sellerData.stats.followers}
               views={sellerData.stats.views}
+              earnings={sellerData.earnings}
+              content={sellerData.content}
+              recentSales={sellerData.recentSales}
+              onUploadClick={handleUploadButtonClick}
+              onWithdrawClick={handleWithdrawButtonClick}
             />
           </div>
           
@@ -964,15 +980,7 @@ const SellerDashboard = () => {
               </TabsContent>
               
               <TabsContent value="settings">
-                <SettingsTab 
-                  currentUser={{
-                    name: sellerData.name,
-                    username: sellerData.username,
-                    profileImage: sellerData.profileImage,
-                    bio: sellerData.bio,
-                  }}
-                  onUpdateProfile={handleProfileUpdate}
-                />
+                <SettingsTab />
               </TabsContent>
             </Tabs>
           </div>
@@ -985,8 +993,8 @@ const SellerDashboard = () => {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         step={uploadStep}
-        filePreview={filePreview}
-        fileType={fileType}
+        filePreview={filePreview || ""}
+        fileType={fileType || "image"}
         title={title}
         caption={caption}
         price={price}

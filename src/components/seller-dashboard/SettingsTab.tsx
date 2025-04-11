@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,11 +109,11 @@ const SettingsTab: React.FC = () => {
           firstName,
           lastName,
           email: authUser?.email || "",
-          phone: profileData.phone || "+1 555-123-4567",
-          username: profileData.username || "GoldenSteps",
-          bio: profileData.bio || "Passionate content creator specializing in premium foot-focused content. Sharing beauty and elegance since 2025.",
-          website: profileData.website || "https://oliviagrace.com",
-          social: profileData.social || "@olivia.grace",
+          phone: profileData.phone || "",
+          username: profileData.username || "",
+          bio: profileData.bio || "",
+          website: profileData.website || "",
+          social: profileData.social || "",
           paymentMethod: profileData.payment_method || "bank",
           currency: profileData.currency || "usd",
           emailNotifications: profileData.email_notifications !== false,
