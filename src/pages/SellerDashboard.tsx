@@ -30,7 +30,6 @@ interface SellerProfile {
   created_at: string;
 }
 
-// Update the interface for recentSales to use string IDs instead of numbers
 interface RecentSale {
   id: string;
   item: string;
@@ -39,7 +38,6 @@ interface RecentSale {
   date: string;
 }
 
-// Update the interface for content items to use string IDs instead of numbers
 interface ContentItem {
   id: string;
   type: "photo" | "video";
@@ -73,7 +71,6 @@ const SellerDashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Real data from Supabase
   const [sellerData, setSellerData] = useState({
     name: "",
     username: "",
@@ -102,10 +99,8 @@ const SellerDashboard = () => {
     bio: ""
   });
 
-  // Define the content items - make sure 'type' is explicitly "photo" or "video"
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
 
-  // State for filters and sorting
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
   const [filterType, setFilterType] = useState<"all" | "photo" | "video">("all");
@@ -171,7 +166,6 @@ const SellerDashboard = () => {
 
   const COLORS = ['#FFD700', '#d4af37', '#FFC72C', '#C5B358'];
 
-  // Prepare data for charts
   const [revenueDataState, setRevenueData] = useState<Array<{ name: string, revenue: number }>>([]);
   const [contentPerformanceDataState, setContentPerformanceData] = useState<Array<{ name: string, views: number, sales: number }>>([]);
   const [contentTypeDataState, setContentTypeData] = useState<Array<{ name: string, value: number }>>([]);
@@ -191,7 +185,6 @@ const SellerDashboard = () => {
     status: "completed" | "pending";
   }>>([]);
 
-  // Fetch seller profile data
   useEffect(() => {
     const fetchSellerData = async () => {
       if (!user) return;
@@ -199,7 +192,6 @@ const SellerDashboard = () => {
       try {
         setLoading(true);
         
-        // Get profile data
         const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
@@ -210,7 +202,6 @@ const SellerDashboard = () => {
           throw error;
         }
 
-        // Get follower count
         const { count: followerCount, error: followerError } = await supabase
           .from('followers')
           .select('*', { count: 'exact', head: true })
@@ -220,7 +211,6 @@ const SellerDashboard = () => {
           console.error("Error fetching followers:", followerError);
         }
         
-        // Get content count
         const { data: contentData, error: contentError } = await supabase
           .from('content')
           .select('id, type')
@@ -233,7 +223,6 @@ const SellerDashboard = () => {
         const photoCount = contentData?.filter(item => item.type === 'photo').length || 0;
         const videoCount = contentData?.filter(item => item.type === 'video').length || 0;
         
-        // Get content views
         const { count: viewCount, error: viewError } = await supabase
           .from('content_views')
           .select('*', { count: 'exact', head: true })
@@ -243,7 +232,6 @@ const SellerDashboard = () => {
           console.error("Error fetching content views:", viewError);
         }
         
-        // Get earnings data
         const { data: earningsData, error: earningsError } = await supabase
           .from('earnings')
           .select('amount, created_at, status')
@@ -253,7 +241,6 @@ const SellerDashboard = () => {
           console.error("Error fetching earnings:", earningsError);
         }
         
-        // Calculate earnings
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString();
@@ -273,12 +260,10 @@ const SellerDashboard = () => {
           .filter(item => new Date(item.created_at) >= new Date(monthAgo))
           .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         
-        // Calculate balance
         const availableBalance = completedEarnings.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         const pendingBalance = (earningsData?.filter(item => item.status === 'pending') || [])
           .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         
-        // Get recent purchases
         const { data: purchasesData, error: purchasesError } = await supabase
           .from('purchases')
           .select(`
@@ -298,16 +283,11 @@ const SellerDashboard = () => {
           console.error("Error fetching purchases:", purchasesError);
         }
         
-        // Format recent sales
         const recentSales: RecentSale[] = purchasesData?.map(purchase => {
-          // @ts-ignore - we know the join structure
           const buyerName = purchase.buyer?.profiles?.username || purchase.buyer?.profiles?.full_name || "Anonymous";
-          // @ts-ignore - we know the join structure
           const itemName = purchase.content?.title || "Content";
           
-          // Format date
           const purchaseDate = new Date(purchase.purchase_date);
-          const now = new Date();
           const isToday = purchaseDate.toDateString() === now.toDateString();
           const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === purchaseDate.toDateString();
           
@@ -333,18 +313,16 @@ const SellerDashboard = () => {
           };
         }) || [];
 
-        // Get creation date
         const memberSince = new Date(profileData.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-        // Format the seller data
         setSellerData({
           name: profileData.full_name || "Seller",
           username: profileData.username || "user",
-          verified: true, // We could add a verified field to the profiles table if needed
+          verified: true,
           profileImage: profileData.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
           memberSince,
-          rating: 4.8, // Placeholder until we implement ratings
-          reviews: 0, // Placeholder until we implement reviews
+          rating: 4.8,
+          reviews: 0,
           balance: availableBalance,
           pendingBalance,
           earnings: {
@@ -365,28 +343,25 @@ const SellerDashboard = () => {
           bio: profileData.bio || "Content creator"
         });
 
-        // Fetch and set content items
         if (contentData && contentData.length > 0) {
           const formattedContent: ContentItem[] = contentData.map((item, index) => {
             return {
               id: item.id,
               type: item.type as "photo" | "video",
-              title: `Content ${index + 1}`, // We'll update this when we fetch the full content data
-              likes: 0, // Placeholder
-              sales: 0, // Placeholder
-              price: "$9.99", // Placeholder
-              date: new Date().toISOString().split('T')[0], // Placeholder
-              thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80" // Placeholder
+              title: `Content ${index + 1}`,
+              likes: 0,
+              sales: 0,
+              price: "$9.99",
+              date: new Date().toISOString().split('T')[0],
+              thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&auto=format&q=80"
             };
           });
           
           setContentItems(formattedContent);
         }
 
-        // Create transactions list from earnings and withdrawals
         const fetchTransactions = async () => {
           try {
-            // Get earnings
             const { data: earnings, error: earningsError } = await supabase
               .from('earnings')
               .select('*')
@@ -395,7 +370,6 @@ const SellerDashboard = () => {
               
             if (earningsError) throw earningsError;
             
-            // Get withdrawals
             const { data: withdrawals, error: withdrawalsError } = await supabase
               .from('withdrawals')
               .select('*')
@@ -404,7 +378,6 @@ const SellerDashboard = () => {
               
             if (withdrawalsError) throw withdrawalsError;
 
-            // Combine and format transactions
             const formattedEarnings = earnings?.map(earning => ({
               id: earning.id,
               type: 'Content Purchase',
@@ -419,11 +392,10 @@ const SellerDashboard = () => {
               type: 'Withdrawal',
               description: `Payment method: ${withdrawal.payment_method}`,
               date: new Date(withdrawal.created_at).toLocaleDateString(),
-              amount: -Number(withdrawal.amount), // Negative for withdrawals
+              amount: -Number(withdrawal.amount),
               status: withdrawal.status as "completed" | "pending"
             })) || [];
             
-            // Combine and sort by date (most recent first)
             const allTransactions = [...formattedEarnings, ...formattedWithdrawals]
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
             
@@ -433,10 +405,8 @@ const SellerDashboard = () => {
           }
         };
 
-        // Generate revenue data by month
         const generateRevenueData = async () => {
           try {
-            // Get all completed earnings grouped by month
             const { data: earnings, error: earningsError } = await supabase
               .from('earnings')
               .select('amount, created_at')
@@ -446,7 +416,6 @@ const SellerDashboard = () => {
             if (earningsError) throw earningsError;
             
             if (earnings && earnings.length > 0) {
-              // Group by month
               const monthlyRevenue: Record<string, number> = {};
               const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
               
@@ -462,7 +431,6 @@ const SellerDashboard = () => {
                 monthlyRevenue[monthKey] += Number(earning.amount);
               });
               
-              // Convert to array format for chart
               const revenueChartData = Object.keys(monthlyRevenue).map(key => {
                 const [year, month] = key.split('-');
                 return {
@@ -480,9 +448,8 @@ const SellerDashboard = () => {
                 return monthNames.indexOf(aMonth) - monthNames.indexOf(bMonth);
               });
               
-              setRevenueData(revenueChartData.slice(-6)); // Last 6 months
+              setRevenueData(revenueChartData.slice(-6));
             } else {
-              // Default data if no earnings yet
               const defaultData = [
                 { name: 'Jan', revenue: 0 },
                 { name: 'Feb', revenue: 0 },
@@ -495,7 +462,6 @@ const SellerDashboard = () => {
             }
           } catch (error) {
             console.error("Error generating revenue data:", error);
-            // Set default data in case of error
             const defaultData = [
               { name: 'Jan', revenue: 0 },
               { name: 'Feb', revenue: 0 },
@@ -508,10 +474,8 @@ const SellerDashboard = () => {
           }
         };
 
-        // Generate content performance data
         const generateContentPerformance = async () => {
           try {
-            // Get content with view and sales counts
             const { data: content, error: contentError } = await supabase
               .from('content')
               .select('id, title, type')
@@ -521,15 +485,12 @@ const SellerDashboard = () => {
             if (contentError) throw contentError;
             
             if (content && content.length > 0) {
-              // For each content, get views
               const contentPerformance = await Promise.all(content.map(async (item) => {
-                // Get view count
                 const { count: viewCount } = await supabase
                   .from('content_views')
                   .select('*', { count: 'exact', head: true })
                   .eq('content_id', item.id);
                   
-                // Get sales count
                 const { count: salesCount } = await supabase
                   .from('purchases')
                   .select('*', { count: 'exact', head: true })
@@ -545,7 +506,6 @@ const SellerDashboard = () => {
               
               setContentPerformanceData(contentPerformance);
               
-              // Also prepare top performing content
               const { data: topContent, error: topContentError } = await supabase
                 .from('content')
                 .select(`
@@ -562,7 +522,6 @@ const SellerDashboard = () => {
               
               if (topContent && topContent.length > 0) {
                 const formattedTopContent = await Promise.all(topContent.map(async (item) => {
-                  // Get sales count
                   const { count: salesCount } = await supabase
                     .from('purchases')
                     .select('*', { count: 'exact', head: true })
@@ -578,7 +537,6 @@ const SellerDashboard = () => {
                   };
                 }));
                 
-                // Sort by sales (highest first)
                 formattedTopContent.sort((a, b) => b.sales - a.sales);
                 setTopPerformingContent(formattedTopContent);
               }
@@ -588,7 +546,6 @@ const SellerDashboard = () => {
           }
         };
         
-        // Set content type distribution data
         const getContentTypeData = () => {
           const photoCount = sellerData.content.photos;
           const videoCount = sellerData.content.videos;
@@ -605,7 +562,6 @@ const SellerDashboard = () => {
           ];
         };
 
-        // Generate analytics data
         await fetchTransactions();
         await generateRevenueData();
         await generateContentPerformance();
@@ -678,20 +634,10 @@ const SellerDashboard = () => {
     }
     
     try {
-      // Upload the file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
       
-      // TODO: Create a bucket and update this code when storage is set up
-      // const { data: uploadData, error: uploadError } = await supabase
-      //   .storage
-      //   .from('content')
-      //   .upload(filePath, selectedFile);
-      //
-      // if (uploadError) throw uploadError;
-      
-      // Insert content record in the database
       const { data: contentData, error: contentError } = await supabase
         .from('content')
         .insert({
@@ -700,8 +646,6 @@ const SellerDashboard = () => {
           description: caption,
           price: parseFloat(price),
           type: fileType === "image" ? "photo" : "video",
-          // content_url: uploadData?.path, // Uncomment when storage is set up
-          // thumbnail_url: uploadData?.path // Uncomment when storage is set up
         })
         .select()
         .single();
@@ -713,23 +657,19 @@ const SellerDashboard = () => {
         description: "Your new content is now available on your profile",
       });
       
-      // Add the new content to the existing content items
-      if (contentData) {
-        const newContentItem: ContentItem = {
-          id: contentData.id,
-          type: fileType === "image" ? "photo" as const : "video" as const,
-          title: title,
-          likes: 0,
-          sales: 0,
-          price: `$${price}`,
-          date: new Date().toISOString().split('T')[0],
-          thumbnail: filePreview || ""
-        };
-        
-        setContentItems([newContentItem, ...contentItems]);
-      }
+      const newContentItem: ContentItem = {
+        id: contentData.id,
+        type: fileType === "image" ? "photo" as const : "video" as const,
+        title: title,
+        likes: 0,
+        sales: 0,
+        price: `$${price}`,
+        date: new Date().toISOString().split('T')[0],
+        thumbnail: filePreview || ""
+      };
       
-      // Update seller stats
+      setContentItems([newContentItem, ...contentItems]);
+      
       setSellerData(prev => ({
         ...prev,
         stats: {
@@ -801,7 +741,6 @@ const SellerDashboard = () => {
     setIsProcessingWithdrawal(true);
     
     try {
-      // Create a withdrawal record
       const { error } = await supabase
         .from('withdrawals')
         .insert({
@@ -813,7 +752,6 @@ const SellerDashboard = () => {
       
       if (error) throw error;
       
-      // Update the local state to reflect the withdrawal
       setSellerData(prev => ({
         ...prev,
         balance: prev.balance - parseFloat(withdrawAmount)
@@ -849,12 +787,12 @@ const SellerDashboard = () => {
     const amount = parseFloat(withdrawAmount) || 0;
     
     if (selectedMethod?.id === "paypal") {
-      return amount * 0.01; // 1% fee
+      return amount * 0.01;
     } else if (selectedMethod?.id === "credit_card") {
-      return amount * 0.025; // 2.5% fee
+      return amount * 0.025;
     }
     
-    return 0; // No fee
+    return 0;
   };
 
   const getWithdrawalTotal = () => {
@@ -906,12 +844,180 @@ const SellerDashboard = () => {
   useEffect(() => {
     let filtered = [...contentItems];
     
-    // Apply filter
     if (filterType !== "all") {
       filtered = filtered.filter(item => item.type === filterType);
     }
     
-    // Apply sort
     switch (sortBy) {
       case "newest":
-        filtered.sort((a, b) => new Date(b.date
+        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        break;
+      case "oldest":
+        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case "price-high":
+        filtered.sort((a, b) => parseFloat(b.price.replace("$", "")) - parseFloat(a.price.replace("$", "")));
+        break;
+      case "price-low":
+        filtered.sort((a, b) => parseFloat(a.price.replace("$", "")) - parseFloat(b.price.replace("$", "")));
+        break;
+      case "popular":
+        filtered.sort((a, b) => b.likes - a.likes);
+        break;
+    }
+    
+    setFilteredContent(filtered);
+  }, [contentItems, filterType, sortBy]);
+
+  return (
+    <div>
+      <Navigation />
+      
+      <div className="container mx-auto py-6 px-4 sm:px-6">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 lg:col-span-4">
+            <ProfileCard
+              name={sellerData.name}
+              username={sellerData.username}
+              verified={sellerData.verified}
+              profileImage={sellerData.profileImage}
+              memberSince={sellerData.memberSince}
+              rating={sellerData.rating}
+              reviews={sellerData.reviews}
+              stats={sellerData.stats}
+              onSettingsClick={handleSettingsClick}
+              onAnalyticsClick={handleAnalyticsClick}
+              onContentClick={handleContentClick}
+              loading={loading}
+            />
+            
+            <QuickStatsCard 
+              earnings={sellerData.earnings}
+              content={sellerData.content}
+              balance={sellerData.balance}
+              recentSales={sellerData.recentSales}
+              loading={loading}
+              onUploadClick={handleUploadButtonClick}
+              onWithdrawClick={handleWithdrawButtonClick}
+            />
+          </div>
+          
+          <div className="col-span-12 lg:col-span-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-5 mb-4 w-full">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="content">Content</TabsTrigger>
+                <TabsTrigger value="earnings">Earnings</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview">
+                <OverviewTab
+                  earnings={sellerData.earnings}
+                  recentSales={sellerData.recentSales}
+                  contentItems={contentItems.slice(0, 3)}
+                  onUploadClick={handleUploadButtonClick}
+                />
+              </TabsContent>
+              
+              <TabsContent value="content">
+                <ContentTab 
+                  contentItems={contentItems}
+                  filterType={filterType}
+                  sortBy={sortBy}
+                  filterPopoverOpen={filterPopoverOpen}
+                  sortPopoverOpen={sortPopoverOpen}
+                  onFilterTypeChange={setFilterType}
+                  onSortByChange={setSortBy}
+                  onFilterPopoverOpenChange={setFilterPopoverOpen}
+                  onSortPopoverOpenChange={setSortPopoverOpen}
+                  onContentUpdate={handleUpdateContent}
+                  filteredContent={filteredContent}
+                  onUploadClick={handleUploadButtonClick}
+                  loading={loading}
+                />
+              </TabsContent>
+              
+              <TabsContent value="earnings">
+                <EarningsTab 
+                  balance={sellerData.balance}
+                  pendingBalance={sellerData.pendingBalance}
+                  monthlyEarnings={sellerData.earnings.thisMonth}
+                  revenueData={revenueDataState}
+                  transactions={transactions}
+                  onWithdrawClick={handleWithdrawButtonClick}
+                />
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <AnalyticsTab 
+                  views={sellerData.stats.views}
+                  revenueData={revenueDataState}
+                  contentPerformanceData={contentPerformanceDataState}
+                  contentTypeData={contentTypeDataState}
+                  topContent={topPerformingContent}
+                  colors={COLORS}
+                />
+              </TabsContent>
+              
+              <TabsContent value="settings">
+                <SettingsTab 
+                  currentUser={{
+                    name: sellerData.name,
+                    username: sellerData.username,
+                    profileImage: sellerData.profileImage,
+                    bio: sellerData.bio,
+                  }}
+                  onUpdateProfile={handleProfileUpdate}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+      
+      <Footer />
+      
+      <UploadDialog 
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        step={uploadStep}
+        filePreview={filePreview}
+        fileType={fileType}
+        title={title}
+        caption={caption}
+        price={price}
+        onTitleChange={setTitle}
+        onCaptionChange={setCaption}
+        onPriceChange={setPrice}
+        onFileSelect={handleFileSelect}
+        onSubmit={handleSubmitUpload}
+        triggerFileInput={triggerFileInput}
+        fileInputRef={fileInputRef}
+      />
+      
+      <WithdrawDialog 
+        open={withdrawDialogOpen}
+        onOpenChange={setWithdrawDialogOpen}
+        stage={withdrawStage}
+        paymentMethods={paymentMethods}
+        selectedPaymentMethod={selectedPaymentMethod}
+        withdrawAmount={withdrawAmount}
+        withdrawNote={withdrawNote}
+        balance={sellerData.balance}
+        isProcessing={isProcessingWithdrawal}
+        onPaymentMethodSelect={handlePaymentMethodSelect}
+        onWithdrawAmountChange={setWithdrawAmount}
+        onWithdrawNoteChange={setWithdrawNote}
+        onSubmitAmount={handleWithdrawAmountSubmit}
+        onConfirmWithdrawal={handleWithdrawalConfirmation}
+        onClose={closeWithdrawDialog}
+        getWithdrawalFee={getWithdrawalFee}
+        getWithdrawalTotal={getWithdrawalTotal}
+      />
+    </div>
+  );
+};
+
+export default SellerDashboard;
