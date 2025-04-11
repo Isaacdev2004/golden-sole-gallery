@@ -1,3 +1,4 @@
+
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -104,23 +105,28 @@ const SellerProfile = () => {
           .order('created_at', { ascending: false })
           .limit(4);
         
-        // Build seller data object
+        // Build seller data object - using safe fallbacks for properties that might not exist
+        const username = profile.username || profile.full_name?.split(' ')[0]?.toLowerCase() || "seller";
+        const displayName = profile.full_name || "Seller";
+        const bio = profile.bio || "No bio available";
+        const profileImage = profile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80";
+        
         setSellerData({
           id,
-          username: profile.username || profile.full_name?.split(' ')[0]?.toLowerCase() || "seller",
-          displayName: profile.full_name || "Seller",
+          username,
+          displayName,
           verificationBadge: false,
           rating: rating || 4.8,
           reviewCount: reviewCount || 0,
           joinDate: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           subscribers: subscriberCount || 0,
           likes: (likesCount || 0) / 1000,
-          bio: profile.bio || "No bio available",
+          bio,
           tags: ["Model", "Foot content"],
           subscriptionPrice: 14.99,
           photoCount: photoCount || 0,
           videoCount: videoCount || 0,
-          profileImage: profile.profile_image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&auto=format&q=80",
+          profileImage,
           featuredContent: featuredContent?.map(item => ({
             id: item.id,
             type: item.type,
