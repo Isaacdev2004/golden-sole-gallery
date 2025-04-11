@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -171,6 +170,26 @@ const SellerDashboard = () => {
   ];
 
   const COLORS = ['#FFD700', '#d4af37', '#FFC72C', '#C5B358'];
+
+  // Prepare data for charts
+  const [revenueDataState, setRevenueData] = useState<Array<{ name: string, revenue: number }>>([]);
+  const [contentPerformanceDataState, setContentPerformanceData] = useState<Array<{ name: string, views: number, sales: number }>>([]);
+  const [contentTypeDataState, setContentTypeData] = useState<Array<{ name: string, value: number }>>([]);
+  const [topPerformingContent, setTopPerformingContent] = useState<Array<{
+    id: string;
+    title: string;
+    type: string;
+    price: string;
+    sales: number;
+  }>>([]);
+  const [transactions, setTransactions] = useState<Array<{
+    id: string;
+    type: string;
+    description: string;
+    date: string;
+    amount: number;
+    status: "completed" | "pending";
+  }>>([]);
 
   // Fetch seller profile data
   useEffect(() => {
@@ -363,6 +382,234 @@ const SellerDashboard = () => {
           
           setContentItems(formattedContent);
         }
+
+        // Create transactions list from earnings and withdrawals
+        const fetchTransactions = async () => {
+          try {
+            // Get earnings
+            const { data: earnings, error: earningsError } = await supabase
+              .from('earnings')
+              .select('*')
+              .eq('seller_id', user.id)
+              .order('created_at', { ascending: false });
+              
+            if (earningsError) throw earningsError;
+            
+            // Get withdrawals
+            const { data: withdrawals, error: withdrawalsError } = await supabase
+              .from('withdrawals')
+              .select('*')
+              .eq('seller_id', user.id)
+              .order('created_at', { ascending: false });
+              
+            if (withdrawalsError) throw withdrawalsError;
+
+            // Combine and format transactions
+            const formattedEarnings = earnings?.map(earning => ({
+              id: earning.id,
+              type: 'Content Purchase',
+              description: earning.purchase_id ? `Purchase ID: ${earning.purchase_id.substring(0, 8)}...` : 'Platform earnings',
+              date: new Date(earning.created_at).toLocaleDateString(),
+              amount: Number(earning.amount),
+              status: earning.status as "completed" | "pending"
+            })) || [];
+            
+            const formattedWithdrawals = withdrawals?.map(withdrawal => ({
+              id: withdrawal.id,
+              type: 'Withdrawal',
+              description: `Payment method: ${withdrawal.payment_method}`,
+              date: new Date(withdrawal.created_at).toLocaleDateString(),
+              amount: -Number(withdrawal.amount), // Negative for withdrawals
+              status: withdrawal.status as "completed" | "pending"
+            })) || [];
+            
+            // Combine and sort by date (most recent first)
+            const allTransactions = [...formattedEarnings, ...formattedWithdrawals]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            setTransactions(allTransactions);
+          } catch (error) {
+            console.error("Error fetching transactions:", error);
+          }
+        };
+
+        // Generate revenue data by month
+        const generateRevenueData = async () => {
+          try {
+            // Get all completed earnings grouped by month
+            const { data: earnings, error: earningsError } = await supabase
+              .from('earnings')
+              .select('amount, created_at')
+              .eq('seller_id', user.id)
+              .eq('status', 'completed');
+              
+            if (earningsError) throw earningsError;
+            
+            if (earnings && earnings.length > 0) {
+              // Group by month
+              const monthlyRevenue: Record<string, number> = {};
+              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              
+              earnings.forEach(earning => {
+                const date = new Date(earning.created_at);
+                const monthKey = `${date.getFullYear()}-${date.getMonth()+1}`;
+                const monthName = monthNames[date.getMonth()];
+                
+                if (!monthlyRevenue[monthKey]) {
+                  monthlyRevenue[monthKey] = 0;
+                }
+                
+                monthlyRevenue[monthKey] += Number(earning.amount);
+              });
+              
+              // Convert to array format for chart
+              const revenueChartData = Object.keys(monthlyRevenue).map(key => {
+                const [year, month] = key.split('-');
+                return {
+                  name: `${monthNames[parseInt(month)-1]} ${year.slice(2)}`,
+                  revenue: parseFloat(monthlyRevenue[key].toFixed(2))
+                };
+              }).sort((a, b) => {
+                const [aMonth, aYear] = a.name.split(' ');
+                const [bMonth, bYear] = b.name.split(' ');
+                
+                if (aYear !== bYear) {
+                  return parseInt(aYear) - parseInt(bYear);
+                }
+                
+                return monthNames.indexOf(aMonth) - monthNames.indexOf(bMonth);
+              });
+              
+              setRevenueData(revenueChartData.slice(-6)); // Last 6 months
+            } else {
+              // Default data if no earnings yet
+              const defaultData = [
+                { name: 'Jan', revenue: 0 },
+                { name: 'Feb', revenue: 0 },
+                { name: 'Mar', revenue: 0 },
+                { name: 'Apr', revenue: 0 },
+                { name: 'May', revenue: 0 },
+                { name: 'Jun', revenue: 0 },
+              ];
+              setRevenueData(defaultData);
+            }
+          } catch (error) {
+            console.error("Error generating revenue data:", error);
+            // Set default data in case of error
+            const defaultData = [
+              { name: 'Jan', revenue: 0 },
+              { name: 'Feb', revenue: 0 },
+              { name: 'Mar', revenue: 0 },
+              { name: 'Apr', revenue: 0 },
+              { name: 'May', revenue: 0 },
+              { name: 'Jun', revenue: 0 },
+            ];
+            setRevenueData(defaultData);
+          }
+        };
+
+        // Generate content performance data
+        const generateContentPerformance = async () => {
+          try {
+            // Get content with view and sales counts
+            const { data: content, error: contentError } = await supabase
+              .from('content')
+              .select('id, title, type')
+              .eq('seller_id', user.id)
+              .limit(5);
+              
+            if (contentError) throw contentError;
+            
+            if (content && content.length > 0) {
+              // For each content, get views
+              const contentPerformance = await Promise.all(content.map(async (item) => {
+                // Get view count
+                const { count: viewCount } = await supabase
+                  .from('content_views')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('content_id', item.id);
+                  
+                // Get sales count
+                const { count: salesCount } = await supabase
+                  .from('purchases')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('content_id', item.id)
+                  .eq('status', 'completed');
+                
+                return {
+                  name: item.title.length > 10 ? item.title.substring(0, 10) + '...' : item.title,
+                  views: viewCount || 0,
+                  sales: salesCount || 0
+                };
+              }));
+              
+              setContentPerformanceData(contentPerformance);
+              
+              // Also prepare top performing content
+              const { data: topContent, error: topContentError } = await supabase
+                .from('content')
+                .select(`
+                  id, 
+                  title, 
+                  type,
+                  price
+                `)
+                .eq('seller_id', user.id)
+                .order('id', { ascending: false })
+                .limit(3);
+                
+              if (topContentError) throw topContentError;
+              
+              if (topContent && topContent.length > 0) {
+                const formattedTopContent = await Promise.all(topContent.map(async (item) => {
+                  // Get sales count
+                  const { count: salesCount } = await supabase
+                    .from('purchases')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('content_id', item.id)
+                    .eq('status', 'completed');
+                    
+                  return {
+                    id: item.id,
+                    title: item.title,
+                    type: item.type === 'photo' ? 'Photo content' : 'Video content',
+                    price: `$${parseFloat(item.price.toString()).toFixed(2)}`,
+                    sales: salesCount || 0
+                  };
+                }));
+                
+                // Sort by sales (highest first)
+                formattedTopContent.sort((a, b) => b.sales - a.sales);
+                setTopPerformingContent(formattedTopContent);
+              }
+            }
+          } catch (error) {
+            console.error("Error generating content performance data:", error);
+          }
+        };
+        
+        // Set content type distribution data
+        const getContentTypeData = () => {
+          const photoCount = sellerData.content.photos;
+          const videoCount = sellerData.content.videos;
+          
+          if (photoCount === 0 && videoCount === 0) {
+            return [
+              { name: 'No Content', value: 1 }
+            ];
+          }
+          
+          return [
+            { name: 'Photos', value: photoCount },
+            { name: 'Videos', value: videoCount }
+          ];
+        };
+
+        // Generate analytics data
+        await fetchTransactions();
+        await generateRevenueData();
+        await generateContentPerformance();
+        setContentTypeData(getContentTypeData());
 
       } catch (error) {
         console.error("Error fetching seller data:", error);
@@ -667,168 +914,4 @@ const SellerDashboard = () => {
     // Apply sort
     switch (sortBy) {
       case "newest":
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case "oldest":
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case "price-high":
-        filtered.sort((a, b) => parseFloat(b.price.replace("$", "")) - parseFloat(a.price.replace("$", "")));
-        break;
-      case "price-low":
-        filtered.sort((a, b) => parseFloat(a.price.replace("$", "")) - parseFloat(b.price.replace("$", "")));
-        break;
-      case "popular":
-        filtered.sort((a, b) => b.sales - a.sales);
-        break;
-    }
-    
-    setFilteredContent(filtered);
-  }, [filterType, sortBy, contentItems]);
-
-  if (loading) {
-    return (
-      <>
-        <Navigation />
-        <div className="container mx-auto px-4 py-12 flex justify-center items-center">
-          <p className="text-lg">Loading seller dashboard...</p>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <Navigation />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            <ProfileCard
-              name={sellerData.name}
-              username={sellerData.username}
-              verified={sellerData.verified}
-              profileImage={sellerData.profileImage}
-              memberSince={sellerData.memberSince}
-              rating={sellerData.rating}
-              reviews={sellerData.reviews}
-              content={sellerData.content}
-              bio={sellerData.bio}
-              onProfileUpdate={handleProfileUpdate}
-            />
-            
-            <QuickStatsCard
-              balance={sellerData.balance}
-              followers={sellerData.stats.followers}
-              views={sellerData.stats.views}
-            />
-          </div>
-          
-          <div className="lg:col-span-3">
-            <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5 mb-6">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="content">My Content</TabsTrigger>
-                <TabsTrigger value="earnings">Earnings</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview">
-                <OverviewTab 
-                  sellerData={sellerData}
-                  onUploadClick={handleUploadButtonClick}
-                  onSettingsClick={handleSettingsClick}
-                  onAnalyticsClick={handleAnalyticsClick}
-                  onWithdrawClick={handleWithdrawButtonClick}
-                />
-              </TabsContent>
-              
-              <TabsContent value="content">
-                <ContentTab 
-                  filteredContent={filteredContent}
-                  filterType={filterType}
-                  sortBy={sortBy}
-                  filterPopoverOpen={filterPopoverOpen}
-                  sortPopoverOpen={sortPopoverOpen}
-                  onAddNewClick={handleUploadButtonClick}
-                  setFilterPopoverOpen={setFilterPopoverOpen}
-                  setSortPopoverOpen={setSortPopoverOpen}
-                  setFilterType={setFilterType}
-                  setSortBy={setSortBy}
-                  onUpdateContent={handleUpdateContent}
-                />
-              </TabsContent>
-              
-              <TabsContent value="earnings">
-                <EarningsTab 
-                  balance={sellerData.balance}
-                  pendingBalance={sellerData.pendingBalance}
-                  monthlyEarnings={sellerData.earnings.thisMonth}
-                  revenueData={revenueData}
-                  onWithdrawClick={handleWithdrawButtonClick}
-                />
-              </TabsContent>
-              
-              <TabsContent value="analytics">
-                <AnalyticsTab 
-                  views={sellerData.stats.views}
-                  revenueData={revenueData}
-                  contentPerformanceData={contentPerformanceData}
-                  contentTypeData={contentTypeData}
-                  colors={COLORS}
-                />
-              </TabsContent>
-              
-              <TabsContent value="settings">
-                <SettingsTab />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
-      
-      <UploadDialog 
-        open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
-        selectedFile={selectedFile}
-        filePreview={filePreview}
-        fileType={fileType}
-        title={title}
-        caption={caption}
-        price={price}
-        uploadStep={uploadStep}
-        onTitleChange={setTitle}
-        onCaptionChange={setCaption}
-        onPriceChange={setPrice}
-        onFileSelect={handleFileSelect}
-        onUploadStepChange={setUploadStep}
-        onSubmit={handleSubmitUpload}
-        triggerFileInput={triggerFileInput}
-      />
-      
-      <WithdrawDialog 
-        open={withdrawDialogOpen}
-        onOpenChange={setWithdrawDialogOpen}
-        stage={withdrawStage}
-        paymentMethods={paymentMethods}
-        selectedPaymentMethod={selectedPaymentMethod}
-        withdrawAmount={withdrawAmount}
-        withdrawNote={withdrawNote}
-        balance={sellerData.balance}
-        isProcessing={isProcessingWithdrawal}
-        onPaymentMethodSelect={handlePaymentMethodSelect}
-        onWithdrawAmountChange={setWithdrawAmount}
-        onWithdrawNoteChange={setWithdrawNote}
-        onSubmitAmount={handleWithdrawAmountSubmit}
-        onConfirmWithdrawal={handleWithdrawalConfirmation}
-        onClose={closeWithdrawDialog}
-        getWithdrawalFee={getWithdrawalFee}
-        getWithdrawalTotal={getWithdrawalTotal}
-      />
-    </>
-  );
-};
-
-export default SellerDashboard;
+        filtered.sort((a, b) => new Date(b.date

@@ -19,6 +19,14 @@ interface EarningsTabProps {
   pendingBalance: number;
   monthlyEarnings: number;
   revenueData: Array<{ name: string; revenue: number }>;
+  transactions: Array<{
+    id: string;
+    type: string;
+    description: string;
+    date: string;
+    amount: number;
+    status: "completed" | "pending";
+  }>;
   onWithdrawClick: () => void;
 }
 
@@ -27,6 +35,7 @@ const EarningsTab: React.FC<EarningsTabProps> = ({
   pendingBalance,
   monthlyEarnings,
   revenueData,
+  transactions = [],
   onWithdrawClick,
 }) => {
   return (
@@ -92,49 +101,28 @@ const EarningsTab: React.FC<EarningsTabProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border-b">
-                <div>
-                  <p className="font-medium">Content Purchase</p>
-                  <p className="text-xs text-gray-500">Today, 10:30 AM</p>
+              {transactions.length > 0 ? (
+                transactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{transaction.type}</p>
+                      <p className="text-xs text-gray-500">{transaction.description}</p>
+                    </div>
+                    <div className={`flex items-center ${transaction.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      <p className="font-medium">{transaction.amount > 0 ? '+' : ''}{transaction.amount.toFixed(2)}</p>
+                      {transaction.amount > 0 ? (
+                        <ArrowUpRight className="h-4 w-4 ml-1" />
+                      ) : (
+                        <ArrowDownRight className="h-4 w-4 ml-1" />
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 text-center text-gray-500">
+                  No transactions yet.
                 </div>
-                <div className="flex items-center text-green-500">
-                  <p className="font-medium">+$15.00</p>
-                  <ArrowUpRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border-b">
-                <div>
-                  <p className="font-medium">Subscription Payment</p>
-                  <p className="text-xs text-gray-500">Yesterday, 8:15 PM</p>
-                </div>
-                <div className="flex items-center text-green-500">
-                  <p className="font-medium">+$19.99</p>
-                  <ArrowUpRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border-b">
-                <div>
-                  <p className="font-medium">Withdrawal</p>
-                  <p className="text-xs text-gray-500">Apr 1, 2025</p>
-                </div>
-                <div className="flex items-center text-red-500">
-                  <p className="font-medium">-$150.00</p>
-                  <ArrowDownRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3">
-                <div>
-                  <p className="font-medium">Content Package</p>
-                  <p className="text-xs text-gray-500">Mar 28, 2025</p>
-                </div>
-                <div className="flex items-center text-green-500">
-                  <p className="font-medium">+$45.00</p>
-                  <ArrowUpRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>

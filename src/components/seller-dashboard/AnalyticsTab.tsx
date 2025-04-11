@@ -23,6 +23,13 @@ interface AnalyticsTabProps {
   revenueData: Array<{ name: string; revenue: number }>;
   contentPerformanceData: Array<{ name: string; views: number; sales: number }>;
   contentTypeData: Array<{ name: string; value: number }>;
+  topContent: Array<{
+    id: string;
+    title: string;
+    type: string;
+    price: string;
+    sales: number;
+  }>;
   colors: string[];
 }
 
@@ -31,6 +38,7 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
   revenueData,
   contentPerformanceData,
   contentTypeData,
+  topContent = [],
   colors,
 }) => {
   return (
@@ -161,53 +169,29 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
             <Card>
               <CardContent className="p-0">
                 <div className="space-y-0">
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
-                        <Eye className="h-5 w-5 text-gold" />
+                  {topContent.length > 0 ? (
+                    topContent.map((content) => (
+                      <div key={content.id} className="flex items-center justify-between p-4 border-b last:border-0">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
+                            <Eye className="h-5 w-5 text-gold" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{content.title}</p>
+                            <p className="text-xs text-gray-500">{content.type}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{content.price}</p>
+                          <p className="text-xs text-gray-500">{content.sales} sales</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">Summer Vibes Collection</p>
-                        <p className="text-xs text-gray-500">Photo package</p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      No content performance data yet.
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">$89.00</p>
-                      <p className="text-xs text-gray-500">28 sales</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
-                        <Eye className="h-5 w-5 text-gold" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Beach Walk Tutorial</p>
-                        <p className="text-xs text-gray-500">Video content</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">$45.00</p>
-                      <p className="text-xs text-gray-500">16 sales</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center mr-3">
-                        <Eye className="h-5 w-5 text-gold" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Exclusive Sunset</p>
-                        <p className="text-xs text-gray-500">Premium photo</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">$24.99</p>
-                      <p className="text-xs text-gray-500">14 sales</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
