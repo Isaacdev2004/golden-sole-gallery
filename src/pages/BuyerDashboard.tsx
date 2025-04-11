@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -32,13 +31,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface ProfileData {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  account_type: string;
+  full_name: string | null;
+  profile_image: string | null;
+}
+
 const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState("purchases");
   const [showCreatorDetail, setShowCreatorDetail] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<any>(null);
   const [showActivityStatus, setShowActivityStatus] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [recentPurchases, setRecentPurchases] = useState<any[]>([]);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
@@ -53,7 +61,6 @@ const BuyerDashboard = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Fetch user profile data
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) return;
@@ -86,14 +93,12 @@ const BuyerDashboard = () => {
     fetchUserProfile();
   }, [user, toast]);
   
-  // Fetch recent purchases
   useEffect(() => {
     const fetchPurchases = async () => {
       if (!user) return;
       
       try {
         setLoadingPurchases(true);
-        // Fixed: Changed from .from('profiles').select(...) to directly using .from('purchases')
         const { data, error } = await supabase
           .from('purchases')
           .select(`
@@ -136,14 +141,12 @@ const BuyerDashboard = () => {
     fetchPurchases();
   }, [user, toast]);
   
-  // Fetch favorites (followed sellers)
   useEffect(() => {
     const fetchFavorites = async () => {
       if (!user) return;
       
       try {
         setLoadingFavorites(true);
-        // Fixed: Changed from .from('profiles').select(...) to directly using .from('followers')
         const { data, error } = await supabase
           .from('followers')
           .select(`
@@ -155,10 +158,8 @@ const BuyerDashboard = () => {
         if (error) {
           console.error('Error fetching favorites:', error);
         } else if (data && data.length > 0) {
-          // Get the seller profile IDs
           const sellerIds = data.map(item => item.following_id);
           
-          // Fetch the seller profiles
           const { data: sellerProfiles, error: sellerError } = await supabase
             .from('profiles')
             .select('*')
@@ -168,24 +169,20 @@ const BuyerDashboard = () => {
           if (sellerError) {
             console.error('Error fetching seller profiles:', sellerError);
           } else if (sellerProfiles) {
-            // Get content counts for each seller
             const enhancedFavorites = await Promise.all(
               sellerProfiles.map(async (seller) => {
-                // Count photos by this seller
                 const { count: photoCount } = await supabase
                   .from('content')
                   .select('*', { count: 'exact', head: true })
                   .eq('seller_id', seller.id)
                   .eq('type', 'photo');
                 
-                // Count videos by this seller
                 const { count: videoCount } = await supabase
                   .from('content')
                   .select('*', { count: 'exact', head: true })
                   .eq('seller_id', seller.id)
                   .eq('type', 'video');
                 
-                // Get average rating for this seller
                 const { data: reviews } = await supabase
                   .from('reviews')
                   .select('rating')
@@ -200,14 +197,14 @@ const BuyerDashboard = () => {
                   id: seller.id,
                   name: seller.full_name?.split(' ')[1] || seller.full_name || 'User',
                   displayName: seller.full_name || 'User',
-                  verified: false, // Placeholder, we'd need to add this to the profiles table
-                  rating: rating || 4.5, // Default if no reviews
+                  verified: false,
+                  rating: rating || 4.5,
                   reviews: reviews?.length || 0,
                   content: {
                     photos: photoCount || 0,
                     videos: videoCount || 0
                   },
-                  image: null // We'd need to add profile images
+                  image: null
                 };
               })
             );
@@ -227,7 +224,6 @@ const BuyerDashboard = () => {
     fetchFavorites();
   }, [user, toast]);
   
-  // Format date helper function
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -264,7 +260,6 @@ const BuyerDashboard = () => {
     if (!user) return;
     
     try {
-      // Check if already following
       const { data } = await supabase
         .from('followers')
         .select('*')
@@ -273,14 +268,12 @@ const BuyerDashboard = () => {
         .single();
       
       if (data) {
-        // Unfollow
         await supabase
           .from('followers')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', sellerId);
         
-        // Update local state
         setFavorites(favorites.filter(f => f.id !== sellerId));
         
         toast({
@@ -288,7 +281,6 @@ const BuyerDashboard = () => {
           description: "You are no longer following this seller",
         });
       } else {
-        // Follow - fixed from attempting to insert to profiles to inserting to followers
         await supabase
           .from('followers')
           .insert([
@@ -300,7 +292,6 @@ const BuyerDashboard = () => {
           description: "You are now following this seller",
         });
         
-        // Refresh favorites to include the new follow
         const { data: sellerData, error: sellerError } = await supabase
           .from('profiles')
           .select('*')
@@ -308,7 +299,6 @@ const BuyerDashboard = () => {
           .single();
           
         if (!sellerError && sellerData) {
-          // Basic seller info to display immediately before full refresh
           const newFavorite = {
             id: sellerData.id,
             name: sellerData.full_name?.split(' ')[1] || sellerData.full_name || 'User',
@@ -365,7 +355,6 @@ const BuyerDashboard = () => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
     
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(selectedFile.type)) {
       toast({
@@ -376,8 +365,7 @@ const BuyerDashboard = () => {
       return;
     }
     
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (selectedFile.size > maxSize) {
       toast({
         title: "File too large",
@@ -389,7 +377,6 @@ const BuyerDashboard = () => {
     
     setProfileImageFile(selectedFile);
     
-    // Create preview
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -405,12 +392,10 @@ const BuyerDashboard = () => {
     try {
       setIsUploading(true);
       
-      // Generate a unique file name to avoid collisions
       const fileExt = profileImageFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `profile_images/${user.id}/${fileName}`;
       
-      // Upload the file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('content_uploads')
         .upload(filePath, profileImageFile);
@@ -419,12 +404,10 @@ const BuyerDashboard = () => {
         throw uploadError;
       }
       
-      // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('content_uploads')
         .getPublicUrl(filePath);
       
-      // Update the user's profile with the new image URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -436,11 +419,10 @@ const BuyerDashboard = () => {
         throw updateError;
       }
       
-      // Update local state
-      setUserProfile({
-        ...userProfile,
+      setUserProfile(prev => prev ? {
+        ...prev,
         profile_image: publicUrl
-      });
+      } : null);
       
       toast({
         title: "Profile updated",
@@ -463,12 +445,11 @@ const BuyerDashboard = () => {
     }
   };
   
-  // Use the actual user profile data (if available) or fallback to default values
   const userData = {
     name: userProfile?.full_name || "Loading...",
     email: user?.email || "Loading...",
     memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
-    credits: 50, // This would need to be added to the profiles table
+    credits: 50,
     profileImage: userProfile?.profile_image || null
   };
 
@@ -508,7 +489,6 @@ const BuyerDashboard = () => {
         <h1 className="text-3xl font-bold mb-6">Buyer Dashboard</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Card */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle>Your Profile</CardTitle>
@@ -532,7 +512,7 @@ const BuyerDashboard = () => {
                           </AvatarFallback>
                         )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 rounded-full transition-opacity">
-                          <Camera className="h-8 w-8 text-white" />
+                          <Camera className="h-8 w-8" />
                         </div>
                       </Avatar>
                       <Button 
@@ -648,7 +628,6 @@ const BuyerDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {/* Recent Purchases Content */}
                     {loadingPurchases ? (
                       renderLoadingState()
                     ) : recentPurchases.length > 0 ? (
@@ -863,7 +842,6 @@ const BuyerDashboard = () => {
         </div>
       </div>
       
-      {/* Creator Detail Dialog */}
       <Dialog open={showCreatorDetail} onOpenChange={setShowCreatorDetail}>
         <DialogContent className="max-w-md sm:max-w-lg overflow-y-auto max-h-[85vh]">
           <DialogHeader>
@@ -923,7 +901,6 @@ const BuyerDashboard = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Profile Image Upload Dialog */}
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
