@@ -309,7 +309,7 @@ const SellerDashboard = () => {
             id: purchase.id,
             item: itemName,
             buyer: buyerName,
-            price: `$${parseFloat(purchase.price).toFixed(2)}`,
+            price: `$${parseFloat(purchase.price.toString()).toFixed(2)}`,
             date: dateDisplay
           };
         }) || [];

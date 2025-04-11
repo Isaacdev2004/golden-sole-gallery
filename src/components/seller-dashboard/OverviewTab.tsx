@@ -16,7 +16,7 @@ interface OverviewTabProps {
       totalContent: number;
     };
     recentSales: Array<{
-      id: number;
+      id: string; // Changed from number to string to match Supabase
       item: string;
       buyer: string;
       price: string;

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 
 export interface ContentItem {
-  id: number;
+  id: string; // Changed from number to string to match Supabase
   type: "photo" | "video";
   title: string;
   likes: number;
