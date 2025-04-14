@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState([]);
-  const [sellers, setSellers] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -54,67 +53,6 @@ const Index = () => {
           
           setContent(processedContent);
         }
-
-        // Fetch top sellers
-        const { data: sellersData, error: sellersError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            full_name,
-            username,
-            profile_image,
-            bio,
-            created_at
-          `)
-          .eq('account_type', 'seller')
-          .limit(3);
-
-        if (sellersError) {
-          console.error("Error fetching sellers:", sellersError);
-        } else {
-          // Process seller data to add additional information
-          const processedSellers = await Promise.all((sellersData || []).map(async (seller) => {
-            // Get subscribers (followers) count
-            const { count: followersCount } = await supabase
-              .from('followers')
-              .select('*', { count: 'exact', head: true })
-              .eq('following_id', seller.id);
-            
-            // Get content count
-            const { count: contentCount } = await supabase
-              .from('content')
-              .select('*', { count: 'exact', head: true })
-              .eq('seller_id', seller.id);
-            
-            // Get average rating
-            const { data: reviews } = await supabase
-              .from('reviews')
-              .select('rating')
-              .eq('seller_id', seller.id);
-            
-            let avgRating = 0;
-            if (reviews && reviews.length > 0) {
-              const sum = reviews.reduce((total, review) => total + review.rating, 0);
-              avgRating = parseFloat((sum / reviews.length).toFixed(1));
-            } else {
-              avgRating = 4.5; // Default rating for new sellers
-            }
-            
-            return {
-              id: seller.id,
-              name: seller.full_name || "Anonymous Seller",
-              username: seller.username || "anonymous",
-              bio: seller.bio || "A content creator on our platform.",
-              avatar: seller.profile_image || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&h=256&q=80",
-              subscribers: followersCount || 0,
-              verified: true, // For now, assume all sellers are verified
-              rating: avgRating,
-              contentCount: contentCount || 0
-            };
-          }));
-          
-          setSellers(processedSellers);
-        }
       } catch (error) {
         console.error("Unexpected error:", error);
       } finally {
@@ -144,7 +82,7 @@ const Index = () => {
       <Hero />
       <Features />
       <FeaturedContent content={content} />
-      <TopSellers sellers={sellers} />
+      <TopSellers isHomepage={true} />
       <Testimonials />
       <CallToAction />
       <Footer />
