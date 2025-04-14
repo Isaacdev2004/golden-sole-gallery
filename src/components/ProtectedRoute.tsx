@@ -19,6 +19,8 @@ const ProtectedRoute = ({
   const { user, loading } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [redirectPath, setRedirectPath] = useState(redirectTo);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,6 +42,19 @@ const ProtectedRoute = ({
             });
           } else {
             setUserProfile(data);
+            
+            // Check account type requirement and set redirect if needed
+            if (requiredAccountType && data && data.account_type !== requiredAccountType) {
+              const path = data.account_type === 'buyer' ? '/buyer-dashboard' : '/seller-dashboard';
+              setRedirectPath(path);
+              setShouldRedirect(true);
+              
+              toast({
+                title: "Access Denied",
+                description: `This area is only accessible to ${requiredAccountType}s`,
+                variant: "destructive",
+              });
+            }
           }
         } catch (error) {
           console.error('Error:', error);
@@ -52,7 +67,7 @@ const ProtectedRoute = ({
     };
 
     fetchUserProfile();
-  }, [user, toast]);
+  }, [user, toast, requiredAccountType]);
 
   if (loading || profileLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -62,13 +77,7 @@ const ProtectedRoute = ({
     return <Navigate to={redirectTo} />;
   }
 
-  if (requiredAccountType && userProfile && userProfile.account_type !== requiredAccountType) {
-    const redirectPath = userProfile.account_type === 'buyer' ? '/buyer-dashboard' : '/seller-dashboard';
-    toast({
-      title: "Access Denied",
-      description: `This area is only accessible to ${requiredAccountType}s`,
-      variant: "destructive",
-    });
+  if (shouldRedirect) {
     return <Navigate to={redirectPath} />;
   }
 
