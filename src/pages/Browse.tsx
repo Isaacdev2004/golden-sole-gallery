@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,12 +13,12 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Search, Filter, ChevronDown, Loader2 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Interface for content items
 interface ContentItem {
   id: string;
   title: string;
@@ -30,6 +29,7 @@ interface ContentItem {
   created_at: string;
   seller?: {
     username: string | null;
+    profile_image: string | null;
   };
   likes_count?: number;
   tags?: string[];
@@ -37,7 +37,6 @@ interface ContentItem {
   isFeatured?: boolean;
 }
 
-// Categories and tags for filters
 const categories = [
   "All Categories",
   "Photos",
@@ -68,7 +67,6 @@ const Browse = () => {
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch content from database
   useEffect(() => {
     async function fetchContent() {
       setLoading(true);
@@ -77,9 +75,8 @@ const Browse = () => {
           .from('content')
           .select(`
             *,
-            seller:seller_id (username)
-          `)
-          .order('created_at', { ascending: false });
+            seller:profiles!inner(username, profile_image)
+          `);
 
         if (error) {
           console.error("Error fetching content:", error);
@@ -90,25 +87,19 @@ const Browse = () => {
           });
           setContentItems([]);
         } else {
-          // Process content data to match our interface
           const processedContent = await Promise.all((contentData || []).map(async (item) => {
-            // Get likes count for each content item
             const { count: likesCount } = await supabase
               .from('likes')
               .select('*', { count: 'exact', head: true })
               .eq('content_id', item.id);
 
-            // Determine if the content is new (created within the last 7 days)
             const creationDate = new Date(item.created_at);
             const now = new Date();
             const daysDifference = Math.floor((now.getTime() - creationDate.getTime()) / (1000 * 60 * 60 * 24));
             const isNew = daysDifference < 7;
 
-            // For demo purposes, mark some items as featured (in a real app, this would come from the database)
             const isFeatured = item.price > 20;
 
-            // Placeholder tags - in a real app, these would be stored in a related table
-            // For now, we'll generate some tags based on the content attributes
             let tags: string[] = [];
             if (item.type === "photo") {
               tags.push("photo");
@@ -118,7 +109,6 @@ const Browse = () => {
               tags.push(item.price > 25 ? "premium" : "standard");
             }
 
-            // Add a random popular tag for demonstration
             if (popularTags.length > 0) {
               const randomTag = popularTags[Math.floor(Math.random() * popularTags.length)];
               if (!tags.includes(randomTag)) {
@@ -128,6 +118,10 @@ const Browse = () => {
 
             return {
               ...item,
+              seller: {
+                username: item.seller?.username || "Anonymous",
+                profile_image: item.seller?.profile_image || "/placeholder.svg"
+              },
               likes_count: likesCount || 0,
               tags,
               isNew,
@@ -164,25 +158,20 @@ const Browse = () => {
     setPriceRange(value);
   };
 
-  // Filter and sort content based on user selections
   const filteredContent = contentItems
     .filter((item) => {
-      // Search term filter
       const matchesSearch = 
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.seller?.username?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       
-      // Category filter
       const matchesCategory = 
         selectedCategory === "All Categories" || 
         (selectedCategory === "Photos" && item.type === "photo") ||
         (selectedCategory === "Videos" && item.type === "video") ||
         (selectedCategory === "Premium" && item.price > 20);
       
-      // Price range filter
       const matchesPrice = item.price >= priceRange[0] && item.price <= priceRange[1];
       
-      // Tags filter
       const matchesTags = 
         selectedTags.length === 0 || 
         selectedTags.some(tag => item.tags?.includes(tag));
@@ -190,7 +179,6 @@ const Browse = () => {
       return matchesSearch && matchesCategory && matchesPrice && matchesTags;
     })
     .sort((a, b) => {
-      // Sort based on selected option
       if (sortOption === "newest") {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else if (sortOption === "popular") {
@@ -216,9 +204,7 @@ const Browse = () => {
           </div>
           
           <div className="flex flex-col lg:flex-row gap-6 mb-8">
-            {/* Search and filters section */}
             <div className="w-full lg:w-1/4 space-y-6">
-              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
@@ -230,7 +216,6 @@ const Browse = () => {
                 />
               </div>
               
-              {/* Mobile filters toggle */}
               <div className="block lg:hidden">
                 <Button 
                   variant="outline" 
@@ -245,7 +230,6 @@ const Browse = () => {
                 </Button>
               </div>
               
-              {/* Filters - hidden on mobile unless toggled */}
               <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
                 <div>
                   <h3 className="font-medium mb-2">Category</h3>
@@ -334,7 +318,6 @@ const Browse = () => {
               </div>
             </div>
             
-            {/* Content grid */}
             <div className="w-full lg:w-3/4">
               <div className="mb-4 flex justify-between items-center">
                 <p className="text-gray-600">
@@ -403,8 +386,19 @@ const Browse = () => {
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                             <p className="text-white font-medium">{item.title}</p>
-                            <div className="flex justify-between items-center">
-                              <span className="text-white text-sm">@{item.seller?.username || "Anonymous"}</span>
+                            <div className="flex justify-between items-center mt-2">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="w-8 h-8 border-2 border-white">
+                                  <AvatarImage 
+                                    src={item.seller.profile_image} 
+                                    alt={`${item.seller.username}'s avatar`}
+                                  />
+                                  <AvatarFallback className="bg-gold text-white">
+                                    {item.seller.username.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-white text-sm">@{item.seller.username}</span>
+                              </div>
                               <span className="text-white font-bold">${item.price.toFixed(2)}</span>
                             </div>
                           </div>
