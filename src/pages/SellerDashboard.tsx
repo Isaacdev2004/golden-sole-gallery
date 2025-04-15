@@ -614,9 +614,11 @@ const SellerDashboard = () => {
     if (!file) return;
     
     const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      const result = e.target?.result as string;
+    fileReader.onload = (event) => {
+      const result = event.target?.result as string;
       setFilePreview(result);
+      
+      setUploadStep("details");
     };
     fileReader.readAsDataURL(file);
     
@@ -627,8 +629,6 @@ const SellerDashboard = () => {
     } else if (file.type.startsWith("video/")) {
       setFileType("video");
     }
-    
-    setUploadStep("details");
   };
 
   const triggerFileInput = () => {
@@ -992,12 +992,12 @@ const SellerDashboard = () => {
       <UploadDialog 
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        step={uploadStep}
-        filePreview={filePreview || ""}
-        fileType={fileType || "image"}
+        filePreview={filePreview}
+        fileType={fileType}
         title={title}
         caption={caption}
         price={price}
+        step={uploadStep}
         onTitleChange={setTitle}
         onCaptionChange={setCaption}
         onPriceChange={setPrice}

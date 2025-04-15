@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ArrowDown, ArrowUp, Filter, Image as ImageIcon, Plus, Video, Trash, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export interface ContentItem {
-  id: string; // Changed from number to string to match Supabase
+  id: string;
   type: "photo" | "video";
   title: string;
   likes: number;
@@ -49,7 +49,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
   setFilterType,
   setSortBy,
   onUpdateContent,
-  loading
+  loading = false
 }) => {
   const { toast } = useToast();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -57,6 +57,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
   const [currentItem, setCurrentItem] = useState<ContentItem | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleEditClick = (item: ContentItem) => {
     setCurrentItem(item);
@@ -80,7 +81,6 @@ const ContentTab: React.FC<ContentTabProps> = ({
       return;
     }
     
-    // Create a new array with the updated item
     const updatedContent = filteredContent.map(item => 
       item.id === currentItem.id 
         ? { 
@@ -106,7 +106,6 @@ const ContentTab: React.FC<ContentTabProps> = ({
   const handleConfirmDelete = () => {
     if (!currentItem) return;
     
-    // Filter out the deleted item
     const updatedContent = filteredContent.filter(item => item.id !== currentItem.id);
     
     if (onUpdateContent) {
@@ -120,6 +119,11 @@ const ContentTab: React.FC<ContentTabProps> = ({
       description: "Your content has been moved to trash",
     });
   };
+
+  const displayContent = searchTerm 
+    ? filteredContent.filter(item => 
+        item.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    : filteredContent;
 
   return (
     <Card className="mb-6">
@@ -136,9 +140,13 @@ const ContentTab: React.FC<ContentTabProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 flex gap-3">
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
-            <Input placeholder="Search your content..." />
+            <Input 
+              placeholder="Search your content..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           
           <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
@@ -258,57 +266,80 @@ const ContentTab: React.FC<ContentTabProps> = ({
           </Popover>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {filteredContent.map((item) => (
-            <Card key={item.id} className="overflow-hidden">
-              <div className="relative h-48 bg-gray-100">
-                <img 
-                  src={item.thumbnail} 
-                  alt={item.title} 
-                  className="w-full h-full object-cover"
-                />
-                <Badge className="absolute top-2 right-2 bg-black bg-opacity-60">
-                  {item.type === "photo" ? <ImageIcon className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
-                  {item.type}
-                </Badge>
-              </div>
-              <CardContent className="pt-4">
-                <h3 className="font-medium mb-1">{item.title}</h3>
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>{item.likes} likes</span>
-                  <span>{item.sales} sales</span>
-                  <span className="text-gold font-medium">{item.price}</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gold mr-2" />
+            <p className="text-gray-500">Loading content...</p>
+          </div>
+        ) : displayContent.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {displayContent.map((item) => (
+              <Card key={item.id} className="overflow-hidden">
+                <div className="relative h-48 bg-gray-100">
+                  <img 
+                    src={item.thumbnail} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover"
+                  />
+                  <Badge className="absolute top-2 right-2 bg-black bg-opacity-60">
+                    {item.type === "photo" ? <ImageIcon className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
+                    {item.type}
+                  </Badge>
                 </div>
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleEditClick(item)}
-                  >
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => handleDeleteClick(item)}
-                  >
-                    <Trash className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <CardContent className="pt-4">
+                  <h3 className="font-medium mb-1">{item.title}</h3>
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>{item.likes} likes</span>
+                    <span>{item.sales} sales</span>
+                    <span className="text-gold font-medium">{item.price}</span>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEditClick(item)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => handleDeleteClick(item)}
+                    >
+                      <Trash className="h-3 w-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="mx-auto bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+              <Plus className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No content found</h3>
+            <p className="text-gray-500 mb-4">
+              {searchTerm ? "No content matches your search" : "Start uploading your content to get started"}
+            </p>
+            <Button 
+              className="bg-gold hover:bg-gold-dark"
+              onClick={onUploadClick}
+            >
+              Upload Content
+            </Button>
+          </div>
+        )}
       </CardContent>
 
-      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Content</DialogTitle>
+            <DialogDescription>Make changes to your content details</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -338,11 +369,11 @@ const ContentTab: React.FC<ContentTabProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Content</DialogTitle>
+            <DialogDescription>This action cannot be undone</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p>Are you sure you want to delete "{currentItem?.title}"?</p>

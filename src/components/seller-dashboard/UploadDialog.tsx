@@ -1,7 +1,7 @@
 
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormLabel } from "@/components/ui/form";
@@ -47,6 +47,11 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{step === "select" ? "Upload Content" : "Content Details"}</DialogTitle>
+          <DialogDescription>
+            {step === "select" 
+              ? "Select a file to upload to your store" 
+              : "Add details about your content"}
+          </DialogDescription>
         </DialogHeader>
         
         {step === "select" ? (
@@ -70,12 +75,14 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               <Button 
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                type="button"
               >
                 Cancel
               </Button>
               <Button 
                 className="bg-gold hover:bg-gold-dark"
                 onClick={triggerFileInput}
+                type="button"
               >
                 Select File
               </Button>
@@ -101,16 +108,18 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               </div>
             )}
             <div className="space-y-2">
-              <FormLabel>Title</FormLabel>
+              <FormLabel htmlFor="title">Title</FormLabel>
               <Input 
+                id="title"
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
                 placeholder="Enter a title for your content"
               />
             </div>
             <div className="space-y-2">
-              <FormLabel>Caption (Optional)</FormLabel>
+              <FormLabel htmlFor="caption">Caption (Optional)</FormLabel>
               <Textarea 
+                id="caption"
                 value={caption}
                 onChange={(e) => onCaptionChange(e.target.value)}
                 placeholder="Add a description for your content"
@@ -118,8 +127,9 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <FormLabel>Price ($)</FormLabel>
+              <FormLabel htmlFor="price">Price ($)</FormLabel>
               <Input 
+                id="price"
                 value={price}
                 onChange={(e) => onPriceChange(e.target.value)}
                 placeholder="Enter price (e.g. 4.99)"
@@ -132,12 +142,14 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               <Button 
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                type="button"
               >
-                Back
+                Cancel
               </Button>
               <Button 
                 className="bg-gold hover:bg-gold-dark"
                 onClick={onSubmit}
+                type="button"
               >
                 Upload Content
               </Button>
