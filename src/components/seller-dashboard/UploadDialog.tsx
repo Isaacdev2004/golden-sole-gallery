@@ -89,9 +89,12 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }} className="space-y-4">
             {filePreview && (
-              <div className="aspect-square w-full max-h-64 overflow-hidden rounded-md bg-gray-100">
+              <div className="aspect-video w-full max-h-56 overflow-hidden rounded-md bg-gray-100">
                 {fileType === "image" ? (
                   <img 
                     src={filePreview} 
@@ -114,6 +117,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
                 placeholder="Enter a title for your content"
+                required
               />
             </div>
             <div className="space-y-2">
@@ -136,25 +140,26 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
                 type="number"
                 step="0.01"
                 min="0"
+                required
               />
             </div>
-            <DialogFooter className="grid grid-cols-2 gap-2 sm:justify-start">
+            <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
               <Button 
+                type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                type="button"
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button 
-                className="bg-gold hover:bg-gold-dark"
-                onClick={onSubmit}
-                type="button"
+                type="submit"
+                className="bg-gold hover:bg-gold-dark w-full sm:w-auto"
               >
                 Upload Content
               </Button>
             </DialogFooter>
-          </div>
+          </form>
         )}
       </DialogContent>
     </Dialog>
