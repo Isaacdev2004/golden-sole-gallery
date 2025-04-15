@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FormLabel } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 
 interface UploadDialogProps {
@@ -108,7 +108,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               </div>
             )}
             <div className="space-y-2">
-              <FormLabel htmlFor="title">Title</FormLabel>
+              <Label htmlFor="title">Title</Label>
               <Input 
                 id="title"
                 value={title}
@@ -117,7 +117,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <FormLabel htmlFor="caption">Caption (Optional)</FormLabel>
+              <Label htmlFor="caption">Caption (Optional)</Label>
               <Textarea 
                 id="caption"
                 value={caption}
@@ -127,7 +127,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <FormLabel htmlFor="price">Price ($)</FormLabel>
+              <Label htmlFor="price">Price ($)</Label>
               <Input 
                 id="price"
                 value={price}
