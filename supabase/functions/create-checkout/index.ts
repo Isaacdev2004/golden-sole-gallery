@@ -54,7 +54,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: successUrl,
+      success_url: `${successUrl}&purchase_success=true`,
       cancel_url: cancelUrl,
       metadata: {
         contentId,

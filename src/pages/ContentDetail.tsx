@@ -226,7 +226,7 @@ const ContentDetail = () => {
       setPurchaseLoading(true);
       
       const { origin } = window.location;
-      const successUrl = `${origin}/buyer-dashboard?purchase_success=true&content_id=${id}`;
+      const successUrl = `${origin}/payment-success?content_id=${id}`;
       const cancelUrl = `${origin}/content/${id}?purchase_canceled=true`;
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -240,7 +240,8 @@ const ContentDetail = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('Error from edge function:', error);
+        throw new Error(error.message || 'Failed to initiate checkout');
       }
 
       if (data?.url) {
