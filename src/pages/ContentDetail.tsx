@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,7 @@ const ContentDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [viewCount, setViewCount] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
 
   useEffect(() => {
     const fetchContentDetails = async () => {
@@ -47,7 +47,6 @@ const ContentDetail = () => {
         setLoading(true);
         if (!id) return;
 
-        // Fetch the content details
         const { data: contentData, error: contentError } = await supabase
           .from('content')
           .select('*')
@@ -68,7 +67,6 @@ const ContentDetail = () => {
         setContent(contentData);
         setSelectedImage(contentData.thumbnail_url);
 
-        // Record a view if the user is logged in
         if (user) {
           await supabase
             .from('content_views')
@@ -79,7 +77,6 @@ const ContentDetail = () => {
             .select();
         }
 
-        // Check if the current user has liked this content
         if (user) {
           const { data: likeData } = await supabase
             .from('likes')
@@ -91,7 +88,6 @@ const ContentDetail = () => {
           setLiked(!!likeData);
         }
 
-        // Get view count
         const { count: viewsCount } = await supabase
           .from('content_views')
           .select('*', { count: 'exact', head: true })
@@ -99,7 +95,6 @@ const ContentDetail = () => {
         
         setViewCount(viewsCount || 0);
 
-        // Get like count
         const { count: likesCount } = await supabase
           .from('likes')
           .select('*', { count: 'exact', head: true })
@@ -107,7 +102,6 @@ const ContentDetail = () => {
         
         setLikeCount(likesCount || 0);
 
-        // Fetch seller information
         if (contentData.seller_id) {
           const { data: sellerData, error: sellerError } = await supabase
             .from('profiles')
@@ -122,13 +116,12 @@ const ContentDetail = () => {
               username: sellerData.username || 'seller',
               avatar: sellerData.profile_image || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&h=256&q=80",
               verified: false,
-              rating: 4.9, // We can calculate this from reviews in a real app
-              totalSales: 0, // This would come from a count of purchases in a real app
+              rating: 4.9,
+              totalSales: 0,
             });
           }
         }
 
-        // Fetch reviews
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('*, profiles!reviews_reviewer_id_fkey(full_name, username, profile_image)')
@@ -147,7 +140,6 @@ const ContentDetail = () => {
           })));
         }
 
-        // Fetch related content
         const { data: relatedContentData } = await supabase
           .from('content')
           .select('*, profiles:seller_id(username)')
@@ -192,7 +184,6 @@ const ContentDetail = () => {
 
     try {
       if (liked) {
-        // Remove like
         await supabase
           .from('likes')
           .delete()
@@ -202,7 +193,6 @@ const ContentDetail = () => {
         setLiked(false);
         setLikeCount(prev => prev - 1);
       } else {
-        // Add like
         await supabase
           .from('likes')
           .insert([
@@ -222,7 +212,7 @@ const ContentDetail = () => {
     }
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -232,11 +222,42 @@ const ContentDetail = () => {
       return;
     }
 
-    // In a real implementation, this would redirect to checkout or payment processing
-    toast({
-      title: "Purchase initiated",
-      description: `Processing purchase for ${content?.title || 'content'}...`,
-    });
+    try {
+      setPurchaseLoading(true);
+      
+      const { origin } = window.location;
+      const successUrl = `${origin}/buyer-dashboard?purchase_success=true&content_id=${id}`;
+      const cancelUrl = `${origin}/content/${id}?purchase_canceled=true`;
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          contentId: id,
+          contentTitle: content?.title,
+          contentPrice: content?.price,
+          successUrl,
+          cancelUrl
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error initiating purchase:', error);
+      toast({
+        title: "Purchase failed",
+        description: "There was a problem processing your purchase. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPurchaseLoading(false);
+    }
   };
 
   const handleMessage = () => {
@@ -255,7 +276,6 @@ const ContentDetail = () => {
     });
   };
 
-  // Loading state
   if (loading) {
     return (
       <>
@@ -273,7 +293,6 @@ const ContentDetail = () => {
     );
   }
 
-  // Content not found state
   if (!content) {
     return (
       <>
@@ -302,7 +321,6 @@ const ContentDetail = () => {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left column - Images */}
             <div className="w-full lg:w-3/5">
               <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                 <div className="relative">
@@ -314,7 +332,6 @@ const ContentDetail = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     
-                    {/* Purchase overlay */}
                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                       <Lock className="h-12 w-12 text-white mb-4" />
                       <h3 className="text-white text-xl font-bold mb-2">Premium Content</h3>
@@ -417,7 +434,6 @@ const ContentDetail = () => {
               </Tabs>
             </div>
             
-            {/* Right column - Info and actions */}
             <div className="w-full lg:w-2/5">
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <div className="flex justify-between items-start mb-4">
@@ -454,7 +470,7 @@ const ContentDetail = () => {
                 
                 <div className="border-t border-gray-100 pt-4 mb-6">
                   <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-3xl font-bold text-gold">${content.price}</h2>
+                    <h2 className="text-3xl font-bold text-gold">${content?.price}</h2>
                     <Badge className="bg-green-50 text-green-600 hover:bg-green-50 hover:text-green-600">
                       Instant Access
                     </Badge>
@@ -467,8 +483,16 @@ const ContentDetail = () => {
                 <Button
                   className="w-full bg-gold hover:bg-gold-dark mb-3 py-6 text-lg"
                   onClick={handlePurchase}
+                  disabled={purchaseLoading}
                 >
-                  Purchase Now
+                  {purchaseLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Purchase Now"
+                  )}
                 </Button>
                 
                 <div className="text-center text-sm text-gray-600 mb-6">
@@ -479,7 +503,6 @@ const ContentDetail = () => {
                 </div>
               </div>
               
-              {/* Seller info */}
               {seller && (
                 <Card>
                   <CardContent className="p-6">
@@ -529,7 +552,6 @@ const ContentDetail = () => {
                 </Card>
               )}
               
-              {/* Related content */}
               {relatedContent.length > 0 && (
                 <div className="mt-6">
                   <h3 className="text-lg font-bold mb-4">You May Also Like</h3>

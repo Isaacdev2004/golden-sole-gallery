@@ -18,6 +18,7 @@ import SellerProfile from "./pages/SellerProfile";
 import BuyerDashboard from "./pages/BuyerDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import PurchaseDetail from "./pages/PurchaseDetail";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -96,6 +97,11 @@ const App = () => (
             <Route path="/purchase/:id" element={
               <ProtectedRoute>
                 <PurchaseDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment-success" element={
+              <ProtectedRoute>
+                <PaymentSuccess />
               </ProtectedRoute>
             } />
             

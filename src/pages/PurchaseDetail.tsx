@@ -1,127 +1,128 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, MessageCircle } from "lucide-react";
+import { ArrowLeft, Download, MessageCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const PurchaseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [purchase, setPurchase] = useState(null);
+  const [content, setContent] = useState(null);
+  const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // Mock data - in a real app, this would come from an API
-  const mockPurchases = [
-    { 
-      id: "1", 
-      name: "Summer Collection", 
-      seller: "GoldenSteps", 
-      price: "$15.00", 
-      date: "April 3, 2025", 
-      image: "https://images.unsplash.com/photo-1613677135865-3e7f85ad94b1?w=400&h=400&auto=format&q=80",
-      description: "A beautiful collection of summer-themed foot photography. Perfect for warm weather campaigns and seasonal marketing.",
-      fileCount: 25,
-      fileSize: "45 MB",
-      resolution: "High Resolution (4K)",
-      license: "Commercial Use",
-      downloadCount: 2,
-      purchaseDate: "April 3, 2025 at 14:30 PM"
-    },
-    { 
-      id: "2", 
-      name: "Beach Day Set", 
-      seller: "ArtsyToes", 
-      price: "$12.50", 
-      date: "April 1, 2025", 
-      image: "https://images.unsplash.com/photo-1562183241-b937e95585b6?w=400&h=400&auto=format&q=80",
-      description: "Sand and sea-themed feet photography set ideal for vacation promotions and summer product showcasing.",
-      fileCount: 18,
-      fileSize: "32 MB",
-      resolution: "High Resolution (4K)",
-      license: "Commercial Use",
-      downloadCount: 1,
-      purchaseDate: "April 1, 2025 at 09:15 AM"
-    },
-    { 
-      id: "3", 
-      name: "Wellness Feet Pack", 
-      seller: "FeetFirst", 
-      price: "$18.00", 
-      date: "March 28, 2025", 
-      image: "https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?w=400&h=400&auto=format&q=80",
-      description: "A wellness-focused collection highlighting foot care, massage, and therapeutic concepts.",
-      fileCount: 30,
-      fileSize: "52 MB",
-      resolution: "High Resolution (4K)",
-      license: "Commercial Use",
-      downloadCount: 3,
-      purchaseDate: "March 28, 2025 at 16:45 PM"
-    },
-    { 
-      id: "4", 
-      name: "Fashion Week Special", 
-      seller: "SoleMates", 
-      price: "$22.50", 
-      date: "March 25, 2025", 
-      image: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=400&h=400&auto=format&q=80",
-      description: "Premium fashion-forward foot photography featuring trendy footwear and styling concepts.",
-      fileCount: 40,
-      fileSize: "68 MB",
-      resolution: "Ultra High Resolution (8K)",
-      license: "Commercial Use (Extended)",
-      downloadCount: 1,
-      purchaseDate: "March 25, 2025 at 11:20 AM"
-    },
-    { 
-      id: "5", 
-      name: "Autumn Collection", 
-      seller: "GoldenSteps", 
-      price: "$15.00", 
-      date: "March 20, 2025", 
-      image: "https://images.unsplash.com/photo-1604001307862-2d953b875079?w=400&h=400&auto=format&q=80",
-      description: "Fall-themed foot photography with seasonal colors, textures, and atmospheric elements.",
-      fileCount: 22,
-      fileSize: "41 MB",
-      resolution: "High Resolution (4K)",
-      license: "Commercial Use",
-      downloadCount: 0,
-      purchaseDate: "March 20, 2025 at 15:10 PM"
-    },
-  ];
 
   useEffect(() => {
-    // Simulate API call with a delay
-    const timer = setTimeout(() => {
-      const foundPurchase = mockPurchases.find(p => p.id === id);
-      
-      if (foundPurchase) {
-        setPurchase(foundPurchase);
-      } else {
+    const fetchPurchaseDetails = async () => {
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to view your purchases.",
+          variant: "destructive"
+        });
+        navigate("/login");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        // Fetch purchase data from the database
+        const { data: purchaseData, error: purchaseError } = await supabase
+          .from('purchases')
+          .select('*')
+          .eq('id', id)
+          .eq('buyer_id', user.id)
+          .single();
+
+        if (purchaseError || !purchaseData) {
+          throw new Error('Purchase not found');
+        }
+
+        // Fetch content details
+        const { data: contentData, error: contentError } = await supabase
+          .from('content')
+          .select('*')
+          .eq('id', purchaseData.content_id)
+          .single();
+
+        if (contentError || !contentData) {
+          throw new Error('Content not found');
+        }
+
+        // Fetch seller profile
+        const { data: sellerData, error: sellerError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', purchaseData.seller_id)
+          .single();
+
+        // Format the purchase data
+        const formattedPurchase = {
+          id: purchaseData.id,
+          name: contentData.title,
+          seller: sellerData?.username || 'Seller',
+          price: `$${purchaseData.price}`,
+          date: new Date(purchaseData.purchase_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          image: contentData.thumbnail_url,
+          description: contentData.description || "No description available.",
+          fileCount: 1, // This could be updated with actual file count if available
+          fileSize: "45 MB", // This could be updated with actual file size if available
+          resolution: contentData.type === "photo" ? "High Resolution (4K)" : "HD Video",
+          license: "Commercial Use",
+          downloadCount: 0, // This could be tracked in a separate table if needed
+          purchaseDate: new Date(purchaseData.purchase_date).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+          })
+        };
+
+        setPurchase(formattedPurchase);
+        setContent(contentData);
+        setSeller(sellerData);
+
+      } catch (error) {
+        console.error('Error fetching purchase:', error);
         toast({
           title: "Purchase not found",
           description: "The requested purchase could not be found.",
           variant: "destructive"
         });
         navigate("/buyer-dashboard");
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    }, 600);
+    };
 
-    return () => clearTimeout(timer);
-  }, [id, navigate, toast]);
+    fetchPurchaseDetails();
+  }, [id, navigate, toast, user]);
 
   const handleDownload = () => {
     toast({
       title: "Starting download",
       description: `Downloading ${purchase?.name} content package...`,
     });
+    
+    // In a real implementation, this would initiate a download of the purchased files
+    // For now, we'll just show the toast notification
   };
 
   const handleContactSeller = () => {
@@ -129,6 +130,9 @@ const PurchaseDetail = () => {
       title: "Message sent",
       description: `Your message to ${purchase?.seller} has been sent.`,
     });
+    
+    // In a real implementation, this would open a messaging interface or send a message
+    // For now, we'll just show the toast notification
   };
 
   if (loading) {
@@ -137,7 +141,10 @@ const PurchaseDetail = () => {
         <Navigation />
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-pulse">Loading purchase details...</div>
+            <div className="flex flex-col items-center">
+              <Loader2 className="h-8 w-8 animate-spin text-gold mb-2" />
+              <div>Loading purchase details...</div>
+            </div>
           </div>
         </div>
         <Footer />
