@@ -70,8 +70,7 @@ const PricingPage = () => {
       cta: "Get Premium",
       highlighted: false,
       action: () => {
-        setSelectedPlan("premium");
-        setIsDialogOpen(true);
+        window.location.href = "https://buy.stripe.com/4gwbM71ljcc44UwdQS";
       }
     }
   ];
