@@ -33,8 +33,7 @@ const PricingPage = () => {
       cta: "Get Started",
       highlighted: false,
       action: () => {
-        setSelectedPlan("basic");
-        setIsDialogOpen(true);
+        window.location.href = "https://buy.stripe.com/dR65nJggdgskcmYaEE";
       }
     },
     {
