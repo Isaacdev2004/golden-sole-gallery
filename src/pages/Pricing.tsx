@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const PricingPage = () => {
   const navigate = useNavigate();
@@ -32,13 +33,30 @@ const PricingPage = () => {
       ],
       cta: "Get Started",
       highlighted: false,
-      action: () => {
-        navigate("/register", { 
-          state: { 
-            plan: "Basic",
-            paid: true
-          } 
-        });
+      action: async () => {
+        setSelectedPlan("Basic");
+        try {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: {
+              plan: "basic",
+              priceId: "price_basic", // This should match your Stripe price ID
+              successUrl: `${window.location.origin}/register?plan=Basic&paid=true`,
+              cancelUrl: `${window.location.origin}/pricing`
+            }
+          });
+          
+          if (error) throw error;
+          if (data?.url) {
+            window.location.href = data.url;
+          }
+        } catch (error) {
+          console.error("Error creating checkout session:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initiate checkout. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     },
     {
@@ -55,13 +73,30 @@ const PricingPage = () => {
       ],
       cta: "Sign Up",
       highlighted: true,
-      action: () => {
-        navigate("/register", { 
-          state: { 
-            plan: "Pro",
-            paid: true
-          } 
-        });
+      action: async () => {
+        setSelectedPlan("Pro");
+        try {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: {
+              plan: "pro",
+              priceId: "price_pro", // This should match your Stripe price ID
+              successUrl: `${window.location.origin}/register?plan=Pro&paid=true`,
+              cancelUrl: `${window.location.origin}/pricing`
+            }
+          });
+          
+          if (error) throw error;
+          if (data?.url) {
+            window.location.href = data.url;
+          }
+        } catch (error) {
+          console.error("Error creating checkout session:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initiate checkout. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     },
     {
@@ -79,13 +114,30 @@ const PricingPage = () => {
       ],
       cta: "Get Premium",
       highlighted: false,
-      action: () => {
-        navigate("/register", { 
-          state: { 
-            plan: "Premium",
-            paid: true
-          } 
-        });
+      action: async () => {
+        setSelectedPlan("Premium");
+        try {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: {
+              plan: "premium",
+              priceId: "price_premium", // This should match your Stripe price ID
+              successUrl: `${window.location.origin}/register?plan=Premium&paid=true`,
+              cancelUrl: `${window.location.origin}/pricing`
+            }
+          });
+          
+          if (error) throw error;
+          if (data?.url) {
+            window.location.href = data.url;
+          }
+        } catch (error) {
+          console.error("Error creating checkout session:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initiate checkout. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     }
   ];
