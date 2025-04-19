@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,82 +8,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
+import { AccountTypeSelector } from "@/components/register/AccountTypeSelector";
+import { SelectedPlan } from "@/components/register/SelectedPlan";
+import { RegisterFormFields } from "@/components/register/RegisterFormFields";
+import { useRegisterForm } from "@/hooks/useRegisterForm";
+import { useEffect } from "react";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [accountType, setAccountType] = useState("seller");
   const location = useLocation();
-  const { user, signUp, loading } = useAuth();
+  const { user, loading } = useAuth();
   
-  // If no plan is selected, redirect to pricing page
-  useEffect(() => {
-    if (!location.state?.plan) {
-      navigate("/pricing");
-    }
-  }, [location.state, navigate]);
-
   // Extract plan info from location state
   const selectedPlan = location.state?.plan || null;
   const hasPaid = location.state?.paid || false;
+
+  const {
+    formData,
+    accountType,
+    showPassword,
+    loading: formLoading,
+    handleChange,
+    handleSubmit,
+    setAccountType,
+    setShowPassword,
+  } = useRegisterForm(selectedPlan, hasPaid);
   
-  // Redirect if already authenticated
+  // If already authenticated, redirect
   if (user && !loading) {
     return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
   }
-
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
-    agreeAge: false,
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedPlan) {
-      navigate("/pricing");
-      return;
-    }
-    
-    // Check if passwords match
-    if (formData.password !== formData.confirmPassword) {
-      return;
-    }
-    
-    try {
-      await signUp(
-        formData.email,
-        formData.password,
-        formData.fullName,
-        accountType,
-        selectedPlan.toLowerCase() // Pass the selected plan to the signup function
-      );
-      
-      // Navigation is handled by auth state change in AuthContext
-    } catch (error) {
-      console.error("Registration error:", error);
-    }
-  };
 
   // If no plan is selected, don't render the form
   if (!selectedPlan) {
@@ -112,149 +67,29 @@ const Register = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>I want to join as a:</Label>
-                    <RadioGroup 
-                      value={accountType} 
-                      onValueChange={setAccountType}
-                      className="flex gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="buyer" id="buyer" disabled={!!selectedPlan} />
-                        <Label htmlFor="buyer">Buyer</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="seller" id="seller" disabled={!!selectedPlan} />
-                        <Label htmlFor="seller">Seller</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                  <AccountTypeSelector 
+                    accountType={accountType}
+                    setAccountType={setAccountType}
+                    disabled={!!selectedPlan}
+                  />
                   
                   {selectedPlan && (
-                    <div className="bg-gold/10 p-3 rounded-md border border-gold/30">
-                      <p className="text-sm font-medium">
-                        Selected Plan: <span className="font-bold">{selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}</span>
-                      </p>
-                      {hasPaid && (
-                        <p className="text-xs text-green-600 mt-1">Payment complete</p>
-                      )}
-                    </div>
+                    <SelectedPlan plan={selectedPlan} hasPaid={hasPaid} />
                   )}
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      placeholder="John Doe"
-                      required
-                      value={formData.fullName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email"
-                      name="email"
-                      type="email" 
-                      placeholder="name@example.com" 
-                      required 
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input 
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        required 
-                        value={formData.password}
-                        onChange={handleChange}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? (
-                          <EyeOffIcon className="h-5 w-5" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input 
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
-                      required 
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="agreeTerms" 
-                        name="agreeTerms"
-                        checked={formData.agreeTerms}
-                        onCheckedChange={(checked) => 
-                          setFormData({...formData, agreeTerms: checked === true})}
-                      />
-                      <label
-                        htmlFor="agreeTerms"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        I agree to the{" "}
-                        <Link to="/terms" className="text-gold hover:underline">
-                          Terms of Service
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="text-gold hover:underline">
-                          Privacy Policy
-                        </Link>
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="agreeAge" 
-                        name="agreeAge"
-                        checked={formData.agreeAge}
-                        onCheckedChange={(checked) => 
-                          setFormData({...formData, agreeAge: checked === true})}
-                      />
-                      <label
-                        htmlFor="agreeAge"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        I confirm that I am at least 18 years old
-                      </label>
-                    </div>
-                  </div>
+                  <RegisterFormFields
+                    formData={formData}
+                    showPassword={showPassword}
+                    handleChange={handleChange}
+                    setShowPassword={setShowPassword}
+                  />
                   
                   <Button 
                     type="submit" 
                     className="w-full bg-gold hover:bg-gold-dark"
-                    disabled={!formData.agreeTerms || !formData.agreeAge || loading}
+                    disabled={!formData.agreeTerms || !formData.agreeAge || formLoading}
                   >
-                    {loading ? "Creating Account..." : "Create Account"}
+                    {formLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
 
