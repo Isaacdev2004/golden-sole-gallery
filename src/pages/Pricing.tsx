@@ -51,8 +51,7 @@ const PricingPage = () => {
       cta: "Sign Up",
       highlighted: true,
       action: () => {
-        setSelectedPlan("pro");
-        setIsDialogOpen(true);
+        window.location.href = "https://buy.stripe.com/14k4jFfc9gsk0Eg4gh";
       }
     },
     {
