@@ -15,7 +15,6 @@ import { AccountTypeSelector } from "@/components/register/AccountTypeSelector";
 import { SelectedPlan } from "@/components/register/SelectedPlan";
 import { RegisterFormFields } from "@/components/register/RegisterFormFields";
 import { useRegisterForm } from "@/hooks/useRegisterForm";
-import { useEffect } from "react";
 
 const Register = () => {
   const location = useLocation();
@@ -39,11 +38,6 @@ const Register = () => {
   // If already authenticated, redirect
   if (user && !loading) {
     return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
-  }
-
-  // If no plan is selected, don't render the form
-  if (!selectedPlan) {
-    return null;
   }
 
   return (
