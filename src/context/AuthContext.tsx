@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,7 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, accountType: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, accountType: string, plan: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -24,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -32,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -63,7 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, accountType: string) => {
+  const signUp = async (email: string, password: string, fullName: string, accountType: string, plan: string) => {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signUp({
@@ -73,8 +70,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: {
             fullName,
             accountType,
+            subscriptionPlan: plan,
           },
-          // Disable email verification
           emailRedirectTo: window.location.origin,
         },
       });
@@ -83,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       toast({
         title: "Registration Successful",
-        description: "Your account has been created.",
+        description: "Your account has been created with " + plan + " plan.",
       });
     } catch (error: any) {
       toast({

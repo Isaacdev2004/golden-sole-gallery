@@ -33,7 +33,12 @@ const PricingPage = () => {
       cta: "Get Started",
       highlighted: false,
       action: () => {
-        window.location.href = "https://buy.stripe.com/dR65nJggdgskcmYaEE";
+        navigate("/register", { 
+          state: { 
+            plan: "Basic",
+            paid: true
+          } 
+        });
       }
     },
     {
@@ -51,7 +56,12 @@ const PricingPage = () => {
       cta: "Sign Up",
       highlighted: true,
       action: () => {
-        window.location.href = "https://buy.stripe.com/14k4jFfc9gsk0Eg4gh";
+        navigate("/register", { 
+          state: { 
+            plan: "Pro",
+            paid: true
+          } 
+        });
       }
     },
     {
@@ -70,7 +80,12 @@ const PricingPage = () => {
       cta: "Get Premium",
       highlighted: false,
       action: () => {
-        window.location.href = "https://buy.stripe.com/4gwbM71ljcc44UwdQS";
+        navigate("/register", { 
+          state: { 
+            plan: "Premium",
+            paid: true
+          } 
+        });
       }
     }
   ];

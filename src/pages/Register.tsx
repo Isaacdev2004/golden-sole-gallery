@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,15 +19,28 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [accountType, setAccountType] = useState("buyer");
+  const [accountType, setAccountType] = useState("seller");
   const location = useLocation();
   const { user, signUp, loading } = useAuth();
   
+  // If no plan is selected, redirect to pricing page
+  useEffect(() => {
+    if (!location.state?.plan) {
+      navigate("/pricing");
+    }
+  }, [location.state, navigate]);
+
   // Extract plan info from location state
   const selectedPlan = location.state?.plan || null;
   const hasPaid = location.state?.paid || false;
   
+  // Redirect if already authenticated
+  if (user && !loading) {
+    return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
+  }
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -36,18 +49,6 @@ const Register = () => {
     agreeTerms: false,
     agreeAge: false,
   });
-
-  // Set account type to seller if coming from pricing page
-  useEffect(() => {
-    if (selectedPlan) {
-      setAccountType("seller");
-    }
-  }, [selectedPlan]);
-
-  // Redirect if already authenticated
-  if (user && !loading) {
-    return <Navigate to={accountType === "seller" ? "/seller-dashboard" : "/buyer-dashboard"} />;
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -60,6 +61,11 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedPlan) {
+      navigate("/pricing");
+      return;
+    }
+    
     // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
       return;
@@ -70,15 +76,20 @@ const Register = () => {
         formData.email,
         formData.password,
         formData.fullName,
-        accountType
+        accountType,
+        selectedPlan.toLowerCase() // Pass the selected plan to the signup function
       );
       
       // Navigation is handled by auth state change in AuthContext
     } catch (error) {
-      // Error is already handled by auth context
       console.error("Registration error:", error);
     }
   };
+
+  // If no plan is selected, don't render the form
+  if (!selectedPlan) {
+    return null;
+  }
 
   return (
     <>
