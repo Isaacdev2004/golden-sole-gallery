@@ -20,7 +20,24 @@ const PricingPage = () => {
   
   const tiers = [
     {
-      name: "Basic",
+      name: "Buyer Account",
+      price: "Free",
+      description: "Create a buyer account to start purchasing content",
+      features: [
+        "Browse all content",
+        "Purchase content",
+        "Message sellers",
+        "Track orders",
+        "24/7 support"
+      ],
+      cta: "Sign Up Free",
+      highlighted: true,
+      action: () => {
+        navigate("/register", { state: { accountType: "buyer" } });
+      }
+    },
+    {
+      name: "Basic Seller",
       price: "$4.99",
       description: "Perfect for beginners looking to sell their content",
       features: [
@@ -37,7 +54,7 @@ const PricingPage = () => {
       }
     },
     {
-      name: "Pro",
+      name: "Pro Seller",
       price: "$9.99",
       description: "For dedicated content creators with regular uploads",
       features: [
@@ -49,13 +66,13 @@ const PricingPage = () => {
         "Custom watermarks"
       ],
       cta: "Sign Up",
-      highlighted: true,
+      highlighted: false,
       action: () => {
         window.location.href = "https://buy.stripe.com/14k4jFfc9gsk0Eg4gh";
       }
     },
     {
-      name: "Premium",
+      name: "Premium Seller",
       price: "$19.99",
       description: "For professional content creators with high volume",
       features: [
@@ -110,7 +127,7 @@ const PricingPage = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Choose the perfect plan for your content creation needs with no hidden fees
+              Join as a buyer for free or choose a seller plan that suits your needs
             </p>
           </div>
 
