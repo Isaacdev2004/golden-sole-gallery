@@ -449,7 +449,6 @@ const BuyerDashboard = () => {
     name: userProfile?.full_name || "Loading...",
     email: user?.email || "Loading...",
     memberSince: userProfile ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "Loading...",
-    credits: 50,
     profileImage: userProfile?.profile_image || null
   };
 
@@ -534,13 +533,6 @@ const BuyerDashboard = () => {
                       <span className="text-gray-600">Member since:</span>
                       <span className="font-medium">{userData.memberSince}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Credits:</span>
-                      <span className="font-medium text-gold">{userData.credits}</span>
-                    </div>
-                    <Button className="w-full mt-4 bg-gold hover:bg-gold-dark">
-                      Add Credits
-                    </Button>
                   </div>
                 </>
               )}
