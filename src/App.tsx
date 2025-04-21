@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -33,12 +33,10 @@ import SellersHelp from "./pages/help/SellersHelp";
 import PrivacySecurityHelp from "./pages/help/PrivacySecurityHelp";
 import TroubleshootingHelp from "./pages/help/TroubleshootingHelp";
 import Cookies from "./pages/Cookies";
-// Help content pages
 import BrowsingContentHelp from "./pages/help/browsing-content";
 import UploadingContentHelp from "./pages/help/uploading-content";
 import TwoFactorHelp from "./pages/help/two-factor";
 import LoginProblemsHelp from "./pages/help/login-problems";
-// New help content pages
 import PurchasingHelp from "./pages/help/purchasing";
 import MessagingSellersHelp from "./pages/help/messaging-sellers";
 import BuyerProtectionHelp from "./pages/help/buyer-protection";
@@ -70,6 +68,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <Toaster />
           <Sonner />
@@ -83,7 +82,6 @@ const App = () => (
             <Route path="/sellers" element={<Sellers />} />
             <Route path="/seller/:id" element={<SellerProfile />} />
             
-            {/* Protected routes with specific account type requirements */}
             <Route path="/buyer-dashboard" element={
               <ProtectedRoute requiredAccountType="buyer">
                 <BuyerDashboard />
@@ -105,7 +103,6 @@ const App = () => (
               </ProtectedRoute>
             } />
             
-            {/* Public routes */}
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
@@ -119,12 +116,10 @@ const App = () => (
             <Route path="/help/privacy-security" element={<PrivacySecurityHelp />} />
             <Route path="/help/troubleshooting" element={<TroubleshootingHelp />} />
             <Route path="/cookies" element={<Cookies />} />
-            {/* Help content routes */}
             <Route path="/help/browsing-content" element={<BrowsingContentHelp />} />
             <Route path="/help/uploading-content" element={<UploadingContentHelp />} />
             <Route path="/help/two-factor" element={<TwoFactorHelp />} />
             <Route path="/help/login-problems" element={<LoginProblemsHelp />} />
-            {/* New help content routes */}
             <Route path="/help/purchasing" element={<PurchasingHelp />} />
             <Route path="/help/messaging-sellers" element={<MessagingSellersHelp />} />
             <Route path="/help/buyer-protection" element={<BuyerProtectionHelp />} />
@@ -150,7 +145,6 @@ const App = () => (
             <Route path="/help/setting-up-seller" element={<SellerSetupHelp />} />
             <Route path="/help/subscription-plans" element={<SubscriptionPlansHelp />} />
             <Route path="/report" element={<ReportAbuse />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
